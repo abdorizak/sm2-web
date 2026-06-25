@@ -1,0 +1,54 @@
+.section {
+  padding-block: clamp(3rem, 7vw, 5.5rem);
+  border-top: 1px solid var(--line);
+}
+.link {
+  color: var(--amber);
+  border-bottom: 1px dotted var(--amber-deep);
+}
+.link:hover {
+  color: var(--paper);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.group {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.triggers {
+  border-color: var(--amber-deep);
+}
+.groupLabel {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.9rem;
+}
+.group ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.group li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.group li code {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--paper);
+  font-weight: 600;
+}
+.group li span {
+  font-size: 0.8rem;
+  color: var(--haze);
+}
