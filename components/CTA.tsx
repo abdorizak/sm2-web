@@ -1,7 +1,7 @@
 import CopyButton from "./CopyButton";
 import styles from "./CTA.module.css";
 
-const INSTALL = "go install github.com/cabdirizaaqyare/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
 
 export default function CTA() {
   return (
@@ -24,7 +24,7 @@ export default function CTA() {
 
           <a
             className={styles.button}
-            href="https://github.com/cabdirizaaqyare/runix"
+            href="https://github.com/abdorizak/runix"
             target="_blank"
             rel="noopener noreferrer"
           >

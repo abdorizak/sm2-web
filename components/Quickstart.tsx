@@ -18,9 +18,9 @@ const STEPS: Step[] = [
   {
     n: "01",
     title: "Install",
-    copy: "go install github.com/cabdirizaaqyare/runix/cmd/runix@latest",
+    copy: "go install github.com/abdorizak/runix/cmd/runix@latest",
     lines: [
-      { text: "go install github.com/cabdirizaaqyare/runix/cmd/runix@latest", prompt: true, tone: "cmd" },
+      { text: "go install github.com/abdorizak/runix/cmd/runix@latest", prompt: true, tone: "cmd" },
     ],
   },
   {

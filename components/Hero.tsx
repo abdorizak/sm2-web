@@ -2,7 +2,7 @@ import CopyButton from "./CopyButton";
 import SupervisorBoard from "./SupervisorBoard";
 import styles from "./Hero.module.css";
 
-const INSTALL = "go install github.com/cabdirizaaqyare/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
 
 export default function Hero() {
   return (
@@ -27,7 +27,7 @@ export default function Hero() {
             </a>
             <a
               className={styles.secondary}
-              href="https://github.com/cabdirizaaqyare/runix"
+              href="https://github.com/abdorizak/runix"
               target="_blank"
               rel="noopener noreferrer"
             >

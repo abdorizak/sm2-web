@@ -18,7 +18,7 @@ export default function Nav() {
           <a href="/docs">docs</a>
           <a
             className={styles.cta}
-            href="https://github.com/cabdirizaaqyare/runix"
+            href="https://github.com/abdorizak/runix"
             target="_blank"
             rel="noopener noreferrer"
           >

@@ -98,7 +98,7 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
   );
 }
 
-const INSTALL = "go install github.com/cabdirizaaqyare/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
 
 export default function DocsPage() {
   return (
