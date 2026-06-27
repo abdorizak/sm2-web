@@ -16,6 +16,7 @@ const NAV = [
   ["commands", "Commands"],
   ["flags", "Start flags"],
   ["config", "Configuration"],
+  ["env", "Environment & reload"],
   ["triggers", "Restart triggers"],
   ["persistence", "Persistence & boot"],
   ["notifications", "Notifications"],
@@ -25,7 +26,7 @@ const NAV = [
 const COMMANDS: [string, string][] = [
   ["start <name>", "Start and supervise an app (see start flags below)."],
   ["stop <name|all>", "Stop one app, all apps, or a --namespace."],
-  ["restart <name|all>", "Restart targets, resetting their backoff."],
+  ["restart <name|all>", "Restart targets. Alias: reload. --update-env re-reads the shell env."],
   ["delete <name|all>", "Stop and remove from the list. Aliases: del, rm."],
   ["reset <name|all>", "Zero the restart counter."],
   ["signal <sig> <name|all>", "Send a signal (HUP, USR1, TERM, …). Alias: sendSignal."],
@@ -217,6 +218,56 @@ health:
               <span className={styles.prompt}>$ </span>rx config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
               <span className={styles.prompt}>$ </span>rx config validate{"  "}<span className={styles.cmt}># check without starting</span>{"\n"}
               <span className={styles.prompt}>$ </span>rx config reload{"    "}<span className={styles.cmt}># apply to the agent</span>
+            </Code>
+          </section>
+
+          <section id="env" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Environment &amp; reload</h2>
+            <p>
+              Every app runs with an environment built from two layers: a{" "}
+              <strong>base</strong> it inherits, plus the{" "}
+              <strong>overrides</strong> you set per app (the{" "}
+              <code className="tok">environment</code> block in config, or{" "}
+              <code className="tok">-e KEY=VALUE</code> on <code className="tok">rx start</code>).
+              Overrides always win.
+            </p>
+            <Code>
+{`final env  =  base (inherited)  +  per-app overrides   ← overrides win
+              └ the agent's environment,
+                or your current shell with --update-env`}
+            </Code>
+            <p>
+              The base is captured when the background agent first starts. That has a
+              practical consequence: if you <code className="tok">export FOO=bar</code> in your
+              shell and then run a plain <code className="tok">rx restart</code>, the app{" "}
+              <em>won&apos;t</em> see <code className="tok">FOO</code> — the agent&apos;s
+              environment is older than your shell. Two ways to refresh:
+            </p>
+            <Table
+              head={["You want to…", "Do this"]}
+              rows={[
+                ["Change env declared in config", "edit runix.yaml/toml → rx config reload"],
+                ["Pull your current shell env into an app", "rx restart <app> --update-env"],
+                ["Restart (PM2 muscle memory)", "rx reload <app>  (alias of restart)"],
+              ]}
+            />
+            <p>
+              <strong>How it works:</strong> <code className="tok">rx config reload</code>{" "}
+              compares each app&apos;s spec — environment included — and restarts only the apps
+              that changed. <code className="tok">--update-env</code> sends your shell&apos;s live
+              environment to the agent, which uses it as the new base on relaunch (your explicit
+              config/<code className="tok">-e</code> values still take precedence).
+            </p>
+            <p>
+              <strong>One honest caveat:</strong> <code className="tok">reload</code> is an alias
+              of <code className="tok">restart</code> — Runix restarts the process, so there is a
+              brief moment of downtime. It is <em>not</em> a zero-downtime rolling reload like
+              PM2&apos;s cluster mode; true hand-off is language- and socket-specific, so Runix
+              keeps the behavior simple and predictable across every runtime.
+            </p>
+            <Code copy="rx restart api --update-env">
+              <span className={styles.prompt}>$ </span>export API_KEY=secret{"\n"}
+              <span className={styles.prompt}>$ </span>rx restart api --update-env{"  "}<span className={styles.cmt}># api now sees API_KEY</span>
             </Code>
           </section>
 
