@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CopyButton from "@/components/CopyButton";
+import DocsSidebar from "./DocsSidebar";
 import styles from "./docs.module.css";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     "Reference for the Runix CLI: every command, start flag, the runix.yaml schema, restart triggers, reboot survival, notifications, and output options.",
 };
 
-const NAV = [
+const NAV: [string, string][] = [
   ["install", "Install"],
   ["quickstart", "Quick start"],
   ["commands", "Commands"],
@@ -106,14 +107,7 @@ export default function DocsPage() {
     <>
       <Nav />
       <div className={styles.wrap}>
-        <aside className={styles.side}>
-          <div className={styles.sideTitle}>reference</div>
-          {NAV.map(([id, label]) => (
-            <a key={id} href={`#${id}`}>
-              {label}
-            </a>
-          ))}
-        </aside>
+        <DocsSidebar items={NAV} />
 
         <main className={styles.content}>
           <h1 className={styles.lead}>Documentation</h1>

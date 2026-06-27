@@ -35,6 +35,11 @@
   color: var(--amber);
   border-color: var(--amber-deep);
 }
+.side a.active {
+  color: var(--amber);
+  border-color: var(--amber);
+  background: rgba(255, 192, 97, 0.06);
+}
 
 /* content */
 .content {
