@@ -173,11 +173,14 @@ export default function DocsPage() {
           <section id="config" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Configuration</h2>
             <p>
-              Declare your whole stack in <code className="tok">runix.yaml</code>, then run{" "}
-              <code className="tok">rx config reload</code> — Runix reconciles the running
-              set to match (starts new, stops removed, restarts changed). Lookup order:{" "}
-              <code className="tok">--config</code> → <code className="tok">./runix.yaml</code> →{" "}
-              <code className="tok">~/.runix/runix.yaml</code>.
+              Declare your whole stack in <code className="tok">runix.yaml</code> or{" "}
+              <code className="tok">runix.toml</code> (Runix picks the parser by extension),
+              then run <code className="tok">rx config reload</code> — Runix reconciles the
+              running set to match (starts new, stops removed, restarts changed). Lookup
+              order: <code className="tok">--config</code> →{" "}
+              <code className="tok">./runix.toml</code> →{" "}
+              <code className="tok">./runix.yaml</code> →{" "}
+              <code className="tok">~/.runix/</code>.
             </p>
             <Code>
 {`agent:
