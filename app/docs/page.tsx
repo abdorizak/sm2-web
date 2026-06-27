@@ -98,7 +98,7 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
   );
 }
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
 
 export default function DocsPage() {
   return (
@@ -128,6 +128,12 @@ export default function DocsPage() {
               <span className={styles.prompt}>$ </span>{INSTALL}
             </Code>
             <p>
+              The same tool also installs as <code className="tok">sp</code> and{" "}
+              <code className="tok">runix</code> (<code className="tok">cmd/sp</code>,{" "}
+              <code className="tok">cmd/runix</code>) — pick whichever you like to type; they
+              share one agent.
+            </p>
+            <p>
               Make sure <code className="tok">$(go env GOPATH)/bin</code> is on your{" "}
               <code className="tok">PATH</code>. No daemon to configure — the CLI starts a
               background agent over a Unix socket on first use.
@@ -136,25 +142,25 @@ export default function DocsPage() {
 
           <section id="quickstart" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Quick start</h2>
-            <Code copy={'runix start api --cmd "./api" --restart always'}>
-              <span className={styles.prompt}>$ </span>runix start api --cmd &quot;./api&quot; --restart always{"\n"}
-              <span className={styles.prompt}>$ </span>runix status{"\n"}
-              <span className={styles.prompt}>$ </span>runix logs api --follow{"\n"}
-              <span className={styles.prompt}>$ </span>runix restart api{"\n"}
-              <span className={styles.prompt}>$ </span>runix save{"  "}<span className={styles.cmt}># survive reboots</span>
+            <Code copy={'rx start api --cmd "./api" --restart always'}>
+              <span className={styles.prompt}>$ </span>rx start api --cmd &quot;./api&quot; --restart always{"\n"}
+              <span className={styles.prompt}>$ </span>rx status{"\n"}
+              <span className={styles.prompt}>$ </span>rx logs api --follow{"\n"}
+              <span className={styles.prompt}>$ </span>rx restart api{"\n"}
+              <span className={styles.prompt}>$ </span>rx save{"  "}<span className={styles.cmt}># survive reboots</span>
             </Code>
           </section>
 
           <section id="commands" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Commands</h2>
-            <p>Twenty commands. Run <code className="tok">runix &lt;cmd&gt; --help</code> for usage.</p>
+            <p>Twenty commands. Run <code className="tok">rx &lt;cmd&gt; --help</code> for usage.</p>
             <Table head={["Command", "Description"]} rows={COMMANDS} />
           </section>
 
           <section id="flags" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Start flags</h2>
             <p>
-              Flags for <code className="tok">runix start</code>. Durations accept Go syntax
+              Flags for <code className="tok">rx start</code>. Durations accept Go syntax
               (<code className="tok">500ms</code>, <code className="tok">10s</code>); sizes accept{" "}
               <code className="tok">K</code>/<code className="tok">M</code>/<code className="tok">G</code>.
             </p>
@@ -173,7 +179,7 @@ export default function DocsPage() {
             <h2><span className={styles.hash}>#</span>Configuration</h2>
             <p>
               Declare your whole stack in <code className="tok">runix.yaml</code>, then run{" "}
-              <code className="tok">runix config reload</code> — Runix reconciles the running
+              <code className="tok">rx config reload</code> — Runix reconciles the running
               set to match (starts new, stops removed, restarts changed). Lookup order:{" "}
               <code className="tok">--config</code> → <code className="tok">./runix.yaml</code> →{" "}
               <code className="tok">~/.runix/runix.yaml</code>.
@@ -209,10 +215,10 @@ health:
   enabled: true
   interval: 30s`}
             </Code>
-            <Code copy="runix config validate">
-              <span className={styles.prompt}>$ </span>runix config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
-              <span className={styles.prompt}>$ </span>runix config validate{"  "}<span className={styles.cmt}># check without starting</span>{"\n"}
-              <span className={styles.prompt}>$ </span>runix config reload{"    "}<span className={styles.cmt}># apply to the agent</span>
+            <Code copy="rx config validate">
+              <span className={styles.prompt}>$ </span>rx config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
+              <span className={styles.prompt}>$ </span>rx config validate{"  "}<span className={styles.cmt}># check without starting</span>{"\n"}
+              <span className={styles.prompt}>$ </span>rx config reload{"    "}<span className={styles.cmt}># apply to the agent</span>
             </Code>
           </section>
 
@@ -248,10 +254,10 @@ health:
               or systemd user unit (Linux) that runs <code className="tok">resurrect</code> at boot,
               so the machine returns to your apps after a restart.
             </p>
-            <Code copy="runix save">
-              <span className={styles.prompt}>$ </span>runix save{"\n"}
-              <span className={styles.prompt}>$ </span>runix startup{"    "}<span className={styles.cmt}># prints the enable command</span>{"\n"}
-              <span className={styles.prompt}>$ </span>runix resurrect{"  "}<span className={styles.cmt}># restore on demand</span>
+            <Code copy="rx save">
+              <span className={styles.prompt}>$ </span>rx save{"\n"}
+              <span className={styles.prompt}>$ </span>rx startup{"    "}<span className={styles.cmt}># prints the enable command</span>{"\n"}
+              <span className={styles.prompt}>$ </span>rx resurrect{"  "}<span className={styles.cmt}># restore on demand</span>
             </Code>
           </section>
 

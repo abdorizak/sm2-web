@@ -24,7 +24,7 @@ export default function Architecture() {
         <div className={styles.diagram}>
           <div className={`${styles.node} ${styles.cli}`}>
             <span className={styles.kind}>CLI</span>
-            <code>runix start · stop · status · logs · config</code>
+            <code>rx start · stop · status · logs · config</code>
           </div>
 
           <div className={styles.link}>

@@ -18,26 +18,26 @@ const STEPS: Step[] = [
   {
     n: "01",
     title: "Install",
-    copy: "go install github.com/abdorizak/runix/cmd/runix@latest",
+    copy: "go install github.com/abdorizak/runix/cmd/rx@latest",
     lines: [
-      { text: "go install github.com/abdorizak/runix/cmd/runix@latest", prompt: true, tone: "cmd" },
+      { text: "go install github.com/abdorizak/runix/cmd/rx@latest", prompt: true, tone: "cmd" },
     ],
   },
   {
     n: "02",
     title: "Start an app",
-    copy: 'runix start api --cmd "./api" --restart always',
+    copy: 'rx start api --cmd "./api" --restart always',
     lines: [
-      { text: 'runix start api --cmd "./api" --restart always', prompt: true, tone: "cmd" },
+      { text: 'rx start api --cmd "./api" --restart always', prompt: true, tone: "cmd" },
       { text: '✅ started "api"', tone: "ok" },
     ],
   },
   {
     n: "03",
     title: "Watch it",
-    copy: "runix status",
+    copy: "rx status",
     lines: [
-      { text: "runix status", prompt: true, tone: "cmd" },
+      { text: "rx status", prompt: true, tone: "cmd" },
       { text: "NAME   STATE     PID    CPU    MEM      UPTIME", tone: "dim" },
       { text: "api    RUNNING   1234   1.2%   18.4MB   12s", tone: "row" },
     ],

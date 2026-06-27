@@ -1,7 +1,7 @@
 import CopyButton from "./CopyButton";
 import styles from "./CTA.module.css";
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
 
 export default function CTA() {
   return (

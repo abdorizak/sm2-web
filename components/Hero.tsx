@@ -2,7 +2,7 @@ import CopyButton from "./CopyButton";
 import SupervisorBoard from "./SupervisorBoard";
 import styles from "./Hero.module.css";
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/runix@latest";
+const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
 
 export default function Hero() {
   return (

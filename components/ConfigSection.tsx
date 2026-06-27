@@ -9,7 +9,7 @@ export default function ConfigSection() {
           <h2>Your stack, in one file.</h2>
           <p>
             Describe every app in <code className="tok">runix.yaml</code>. Edit it,
-            run <code className="tok">runix config reload</code>, and Runix makes
+            run <code className="tok">rx config reload</code>, and Runix makes
             reality match — no manual start/stop dance.
           </p>
         </div>
@@ -55,14 +55,14 @@ export default function ConfigSection() {
               <span className={styles.title}>zsh</span>
             </figcaption>
             <pre className={styles.code}>
-              <span className={styles.prompt}>$</span> runix config reload{"\n"}
+              <span className={styles.prompt}>$</span> rx config reload{"\n"}
               <span className={styles.ok}>applied runix.yaml</span>{"\n"}
               <span className={styles.dim}>NAME     STATE     PID    RESTARTS</span>{"\n"}
               api      <span className={styles.ok}>RUNNING</span>   2101   0{"\n"}
               worker   <span className={styles.ok}>RUNNING</span>   2102   0{"\n"}
               {"\n"}
               <span className={styles.prompt}>$</span> <span className={styles.dim}># edit runix.yaml, then reload again</span>{"\n"}
-              <span className={styles.prompt}>$</span> runix config reload{"\n"}
+              <span className={styles.prompt}>$</span> rx config reload{"\n"}
               <span className={styles.info}>reconcile: started cache</span>{"\n"}
               <span className={styles.info}>reconcile: updated api</span>{"\n"}
               <span className={styles.info}>reconcile: removed worker</span>{"\n"}

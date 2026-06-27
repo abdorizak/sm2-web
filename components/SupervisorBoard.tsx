@@ -114,7 +114,7 @@ export default function SupervisorBoard() {
         <span className={`${styles.dot} ${styles.r}`} />
         <span className={`${styles.dot} ${styles.y}`} />
         <span className={`${styles.dot} ${styles.g}`} />
-        <span className={styles.barTitle}>runix status — live</span>
+        <span className={styles.barTitle}>rx status — live</span>
       </div>
 
       <div className={styles.body}>
