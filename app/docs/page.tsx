@@ -128,13 +128,8 @@ export default function DocsPage() {
               <span className={styles.prompt}>$ </span>{INSTALL}
             </Code>
             <p>
-              The same tool also installs as <code className="tok">sp</code> and{" "}
-              <code className="tok">runix</code> (<code className="tok">cmd/sp</code>,{" "}
-              <code className="tok">cmd/runix</code>) — pick whichever you like to type; they
-              share one agent.
-            </p>
-            <p>
-              Make sure <code className="tok">$(go env GOPATH)/bin</code> is on your{" "}
+              The command is <code className="tok">rx</code>. Make sure{" "}
+              <code className="tok">$(go env GOPATH)/bin</code> is on your{" "}
               <code className="tok">PATH</code>. No daemon to configure — the CLI starts a
               background agent over a Unix socket on first use.
             </p>
