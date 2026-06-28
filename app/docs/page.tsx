@@ -358,10 +358,12 @@ health:
           <section id="output" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Output &amp; color</h2>
             <p>
-              On a terminal, <code className="tok">status</code> prints a colored box (RUNNING green,
-              FAILED red, RESTARTING yellow, STOPPED dim). When piped it falls back to plain
-              tab-separated text, so <code className="tok">grep</code> and{" "}
-              <code className="tok">awk</code> keep working.
+              On a terminal, <code className="tok">status</code> prints a PM2-style colored box —
+              columns: <code className="tok">id · name · namespace · version · mode · pid · uptime ·
+              ↺ · status · cpu · mem · user · watching</code> (RUNNING green, FAILED red,
+              RESTARTING yellow, STOPPED dim). When piped it falls back to plain tab-separated
+              text, so <code className="tok">grep</code> and <code className="tok">awk</code> keep
+              working.
             </p>
             <Table
               head={["Control", "Effect"]}
