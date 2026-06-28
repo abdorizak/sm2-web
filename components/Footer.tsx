@@ -15,7 +15,7 @@ export default function Footer() {
           A universal application operations agent, written in Go.
         </p>
         <p className={styles.meta}>
-          MIT licensed · built with Go, Cobra &amp; zerolog
+          Apache-2.0 licensed · built with Go, Cobra &amp; zerolog
         </p>
       </div>
     </footer>
