@@ -18,9 +18,9 @@ const STEPS: Step[] = [
   {
     n: "01",
     title: "Install",
-    copy: "go install github.com/abdorizak/sm2/cmd/sm2@latest",
+    copy: "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash",
     lines: [
-      { text: "go install github.com/abdorizak/sm2/cmd/sm2@latest", prompt: true, tone: "cmd" },
+      { text: "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash", prompt: true, tone: "cmd" },
     ],
   },
   {

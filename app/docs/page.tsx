@@ -101,7 +101,8 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
   );
 }
 
-const INSTALL = "go install github.com/abdorizak/sm2/cmd/sm2@latest";
+const INSTALL = "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash";
+const INSTALL_GO = "go install github.com/abdorizak/sm2/cmd/sm2@v0.1.0-dev.1";
 
 export default function DocsPage() {
   return (
@@ -119,15 +120,32 @@ export default function DocsPage() {
 
           <section id="install" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Install</h2>
-            <p>sm2 is a single Go binary. Install with the Go toolchain:</p>
+            <p>
+              Quickest — downloads the prebuilt binary for your OS/architecture, verifies
+              its checksum, and installs it (Linux &amp; macOS, no Go required):
+            </p>
             <Code copy={INSTALL}>
               <span className={styles.prompt}>$ </span>{INSTALL}
             </Code>
             <p>
-              The command is <code className="tok">sm2</code>. Make sure{" "}
-              <code className="tok">$(go env GOPATH)/bin</code> is on your{" "}
-              <code className="tok">PATH</code>. No daemon to configure — the CLI starts a
-              background agent over a Unix socket on first use.
+              The command is <code className="tok">sm2</code>. No daemon to configure — the
+              CLI starts a background agent over a Unix socket on first use.
+            </p>
+            <h3>With Go</h3>
+            <Code copy={INSTALL_GO}>
+              <span className={styles.prompt}>$ </span>{INSTALL_GO}
+            </Code>
+            <p>
+              Or download an archive from the{" "}
+              <a
+                href="https://github.com/abdorizak/sm2/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--amber)" }}
+              >
+                releases page
+              </a>
+              . Windows isn&apos;t supported (sm2 uses Unix process groups, signals and sockets).
             </p>
           </section>
 

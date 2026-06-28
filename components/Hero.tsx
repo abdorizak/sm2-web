@@ -2,7 +2,7 @@ import CopyButton from "./CopyButton";
 import SupervisorBoard from "./SupervisorBoard";
 import styles from "./Hero.module.css";
 
-const INSTALL = "go install github.com/abdorizak/sm2/cmd/sm2@latest";
+const INSTALL = "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash";
 
 export default function Hero() {
   return (
