@@ -9,7 +9,7 @@ export default function Footer() {
           <span className={styles.mark}>
             <Logo size={20} />
           </span>
-          runix
+          sm2
         </div>
         <p className={styles.tag}>
           A universal application operations agent, written in Go.

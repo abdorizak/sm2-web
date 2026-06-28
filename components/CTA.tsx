@@ -1,7 +1,7 @@
 import CopyButton from "./CopyButton";
 import styles from "./CTA.module.css";
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
+const INSTALL = "go install github.com/abdorizak/sm2/cmd/sm2@latest";
 
 export default function CTA() {
   return (
@@ -12,7 +12,7 @@ export default function CTA() {
             Stop babysitting processes.
           </h2>
           <p className={styles.sub}>
-            Install Runix, point it at your apps, and let the agent handle the
+            Install sm2, point it at your apps, and let the agent handle the
             3am restarts.
           </p>
 
@@ -24,7 +24,7 @@ export default function CTA() {
 
           <a
             className={styles.button}
-            href="https://github.com/abdorizak/runix"
+            href="https://github.com/abdorizak/sm2"
             target="_blank"
             rel="noopener noreferrer"
           >

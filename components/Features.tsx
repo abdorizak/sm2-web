@@ -2,24 +2,24 @@ import styles from "./Features.module.css";
 
 const FEATURES = [
   {
-    tag: "rx start",
+    tag: "sm2 start",
     title: "Runs anything",
-    body: "Go, Node, Python, Rust, a shell one-liner — if it runs in a terminal, Runix supervises it. PID tracking, process groups, and clean shutdown with SIGTERM then SIGKILL.",
+    body: "Go, Node, Python, Rust, a shell one-liner — if it runs in a terminal, sm2 supervises it. PID tracking, process groups, and clean shutdown with SIGTERM then SIGKILL.",
   },
   {
     tag: "--restart",
     title: "Brings it back",
-    body: "Pick a policy — always, on-failure, or never — and a retry limit. When a process exits unexpectedly, Runix restarts it and counts the attempts.",
+    body: "Pick a policy — always, on-failure, or never — and a retry limit. When a process exits unexpectedly, sm2 restarts it and counts the attempts.",
   },
   {
-    tag: "rx status",
+    tag: "sm2 status",
     title: "Shows what's live",
     body: "Per-process state, CPU, memory, uptime, and restart count in one table. No guessing which services are up.",
   },
   {
-    tag: "rx config reload",
+    tag: "sm2 config reload",
     title: "Describes the whole stack",
-    body: "Declare every app in runix.yaml. Reload reconciles the running set to match — starting what's new, stopping what's gone, restarting what changed.",
+    body: "Declare every app in sm2.yaml. Reload reconciles the running set to match — starting what's new, stopping what's gone, restarting what changed.",
   },
   {
     tag: "notifications",
@@ -52,7 +52,7 @@ export default function Features() {
           <h2>A supervisor, not just a launcher.</h2>
           <p>
             Starting a process is easy. Keeping it healthy, knowing when it
-            isn&apos;t, and putting it back is the job. That&apos;s the part Runix owns.
+            isn&apos;t, and putting it back is the job. That&apos;s the part sm2 owns.
           </p>
         </div>
 

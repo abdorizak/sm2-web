@@ -9,7 +9,7 @@ export default function Nav() {
           <span className={styles.mark}>
             <Logo size={22} />
           </span>
-          runix
+          sm2
         </a>
         <nav className={styles.links}>
           <a href="/#features">features</a>
@@ -18,7 +18,7 @@ export default function Nav() {
           <a href="/docs">docs</a>
           <a
             className={styles.cta}
-            href="https://github.com/abdorizak/runix"
+            href="https://github.com/abdorizak/sm2"
             target="_blank"
             rel="noopener noreferrer"
           >

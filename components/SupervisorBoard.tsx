@@ -71,7 +71,7 @@ export default function SupervisorBoard() {
       );
     }, 1000);
 
-    // The signature: worker crashes, Runix restarts it. On a loop.
+    // The signature: worker crashes, sm2 restarts it. On a loop.
     const cycle: number[] = [];
     function schedule() {
       const set = (name: string, patch: Partial<Proc>) =>
@@ -109,12 +109,12 @@ export default function SupervisorBoard() {
   }, []);
 
   return (
-    <div className={styles.window} role="img" aria-label="A live view of Runix supervising four processes; the worker crashes and Runix restarts it automatically.">
+    <div className={styles.window} role="img" aria-label="A live view of sm2 supervising four processes; the worker crashes and sm2 restarts it automatically.">
       <div className={styles.bar}>
         <span className={`${styles.dot} ${styles.r}`} />
         <span className={`${styles.dot} ${styles.y}`} />
         <span className={`${styles.dot} ${styles.g}`} />
-        <span className={styles.barTitle}>rx status — live</span>
+        <span className={styles.barTitle}>sm2 status — live</span>
       </div>
 
       <div className={styles.body}>

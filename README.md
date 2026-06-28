@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="public/logo.svg" width="92" alt="Runix" />
-  <h1>Runix — website</h1>
-  <p>Landing page and documentation for <strong>Runix</strong>, the universal process supervisor.</p>
+  <img src="public/logo.svg" width="92" alt="sm2" />
+  <h1>sm2 — website</h1>
+  <p>Landing page and documentation for <strong>sm2</strong>, the universal process supervisor.</p>
 </div>
 
 ---
@@ -35,6 +35,6 @@ public/logo.svg     brand mark
 ```
 
 The signature element is `components/SupervisorBoard.tsx` — a live view where a
-process crashes and Runix restarts it automatically.
+process crashes and sm2 restarts it automatically.
 
-The Runix CLI itself lives in a separate repository.
+The sm2 CLI itself lives in a separate repository.

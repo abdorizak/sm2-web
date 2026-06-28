@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Runix — keep everything running",
+  title: "sm2 — keep everything running",
   description:
     "A universal process supervisor written in Go. Run any app in any language with auto-restart, live monitoring, declarative config, and notifications.",
   keywords: ["process manager", "pm2 alternative", "systemd", "go", "supervisor", "devops"],
   openGraph: {
-    title: "Runix — keep everything running",
+    title: "sm2 — keep everything running",
     description:
       "A universal process supervisor written in Go. Auto-restart, live monitoring, declarative config, notifications.",
     type: "website",

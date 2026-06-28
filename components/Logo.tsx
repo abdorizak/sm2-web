@@ -1,4 +1,4 @@
-// Logo is the Runix mark: a terminal prompt (chevron + cursor) in brand amber.
+// Logo is the sm2 mark: a terminal prompt (chevron + cursor) in brand amber.
 export default function Logo({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">

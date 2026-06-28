@@ -6,9 +6,9 @@ import DocsSidebar from "./DocsSidebar";
 import styles from "./docs.module.css";
 
 export const metadata: Metadata = {
-  title: "Runix docs — command & config reference",
+  title: "sm2 docs — command & config reference",
   description:
-    "Reference for the Runix CLI: every command, start flag, the runix.yaml schema, restart triggers, reboot survival, notifications, and output options.",
+    "Reference for the sm2 CLI: every command, start flag, the sm2.yaml schema, restart triggers, reboot survival, notifications, and output options.",
 };
 
 const NAV: [string, string][] = [
@@ -36,13 +36,13 @@ const COMMANDS: [string, string][] = [
   ["logs <name>", "Stream logs. Flags: -f/--follow, --stderr, -n/--lines."],
   ["flush [name]", "Empty log files for one app or all."],
   ["config <sub>", "init · show · validate · reload (see Configuration)."],
-  ["save", "Snapshot the process list to ~/.runix/dump.json. Alias: dump."],
+  ["save", "Snapshot the process list to ~/.sm2/dump.json. Alias: dump."],
   ["resurrect", "Restart the apps from the last save."],
   ["startup", "Generate a launchd/systemd boot service."],
   ["unstartup", "Remove the boot service."],
   ["ping", "Check the agent is up (starts it if not)."],
   ["kill", "Stop the agent and every managed app."],
-  ["version", "Print the Runix version."],
+  ["version", "Print the sm2 version."],
 ];
 
 const FLAGS: [string, string][] = [
@@ -100,7 +100,7 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
   );
 }
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
+const INSTALL = "go install github.com/abdorizak/sm2/cmd/sm2@latest";
 
 export default function DocsPage() {
   return (
@@ -112,18 +112,18 @@ export default function DocsPage() {
         <main className={styles.content}>
           <h1 className={styles.lead}>Documentation</h1>
           <p className={styles.leadSub}>
-            Everything the Runix CLI can do. Commands target an app by name,{" "}
+            Everything the sm2 CLI can do. Commands target an app by name,{" "}
             <code className="tok">all</code>, or a <code className="tok">--namespace</code>.
           </p>
 
           <section id="install" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Install</h2>
-            <p>Runix is a single Go binary. Install with the Go toolchain:</p>
+            <p>sm2 is a single Go binary. Install with the Go toolchain:</p>
             <Code copy={INSTALL}>
               <span className={styles.prompt}>$ </span>{INSTALL}
             </Code>
             <p>
-              The command is <code className="tok">rx</code>. Make sure{" "}
+              The command is <code className="tok">sm2</code>. Make sure{" "}
               <code className="tok">$(go env GOPATH)/bin</code> is on your{" "}
               <code className="tok">PATH</code>. No daemon to configure — the CLI starts a
               background agent over a Unix socket on first use.
@@ -132,25 +132,25 @@ export default function DocsPage() {
 
           <section id="quickstart" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Quick start</h2>
-            <Code copy={'rx start api --cmd "./api" --restart always'}>
-              <span className={styles.prompt}>$ </span>rx start api --cmd &quot;./api&quot; --restart always{"\n"}
-              <span className={styles.prompt}>$ </span>rx status{"\n"}
-              <span className={styles.prompt}>$ </span>rx logs api --follow{"\n"}
-              <span className={styles.prompt}>$ </span>rx restart api{"\n"}
-              <span className={styles.prompt}>$ </span>rx save{"  "}<span className={styles.cmt}># survive reboots</span>
+            <Code copy={'sm2 start api --cmd "./api" --restart always'}>
+              <span className={styles.prompt}>$ </span>sm2 start api --cmd &quot;./api&quot; --restart always{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 status{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 logs api --follow{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 restart api{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 save{"  "}<span className={styles.cmt}># survive reboots</span>
             </Code>
           </section>
 
           <section id="commands" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Commands</h2>
-            <p>Twenty commands. Run <code className="tok">rx &lt;cmd&gt; --help</code> for usage.</p>
+            <p>Twenty commands. Run <code className="tok">sm2 &lt;cmd&gt; --help</code> for usage.</p>
             <Table head={["Command", "Description"]} rows={COMMANDS} />
           </section>
 
           <section id="flags" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Start flags</h2>
             <p>
-              Flags for <code className="tok">rx start</code>. Durations accept Go syntax
+              Flags for <code className="tok">sm2 start</code>. Durations accept Go syntax
               (<code className="tok">500ms</code>, <code className="tok">10s</code>); sizes accept{" "}
               <code className="tok">K</code>/<code className="tok">M</code>/<code className="tok">G</code>.
             </p>
@@ -168,14 +168,14 @@ export default function DocsPage() {
           <section id="config" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Configuration</h2>
             <p>
-              Declare your whole stack in <code className="tok">runix.yaml</code> or{" "}
-              <code className="tok">runix.toml</code> (Runix picks the parser by extension),
-              then run <code className="tok">rx config reload</code> — Runix reconciles the
+              Declare your whole stack in <code className="tok">sm2.yaml</code> or{" "}
+              <code className="tok">sm2.toml</code> (sm2 picks the parser by extension),
+              then run <code className="tok">sm2 config reload</code> — sm2 reconciles the
               running set to match (starts new, stops removed, restarts changed). Lookup
               order: <code className="tok">--config</code> →{" "}
-              <code className="tok">./runix.toml</code> →{" "}
-              <code className="tok">./runix.yaml</code> →{" "}
-              <code className="tok">~/.runix/</code>.
+              <code className="tok">./sm2.toml</code> →{" "}
+              <code className="tok">./sm2.yaml</code> →{" "}
+              <code className="tok">~/.sm2/</code>.
             </p>
             <Code>
 {`agent:
@@ -208,10 +208,10 @@ health:
   enabled: true
   interval: 30s`}
             </Code>
-            <Code copy="rx config validate">
-              <span className={styles.prompt}>$ </span>rx config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
-              <span className={styles.prompt}>$ </span>rx config validate{"  "}<span className={styles.cmt}># check without starting</span>{"\n"}
-              <span className={styles.prompt}>$ </span>rx config reload{"    "}<span className={styles.cmt}># apply to the agent</span>
+            <Code copy="sm2 config validate">
+              <span className={styles.prompt}>$ </span>sm2 config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 config validate{"  "}<span className={styles.cmt}># check without starting</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 config reload{"    "}<span className={styles.cmt}># apply to the agent</span>
             </Code>
           </section>
 
@@ -222,7 +222,7 @@ health:
               <strong>base</strong> it inherits, plus the{" "}
               <strong>overrides</strong> you set per app (the{" "}
               <code className="tok">environment</code> block in config, or{" "}
-              <code className="tok">-e KEY=VALUE</code> on <code className="tok">rx start</code>).
+              <code className="tok">-e KEY=VALUE</code> on <code className="tok">sm2 start</code>).
               Overrides always win.
             </p>
             <Code>
@@ -233,20 +233,20 @@ health:
             <p>
               The base is captured when the background agent first starts. That has a
               practical consequence: if you <code className="tok">export FOO=bar</code> in your
-              shell and then run a plain <code className="tok">rx restart</code>, the app{" "}
+              shell and then run a plain <code className="tok">sm2 restart</code>, the app{" "}
               <em>won&apos;t</em> see <code className="tok">FOO</code> — the agent&apos;s
               environment is older than your shell. Two ways to refresh:
             </p>
             <Table
               head={["You want to…", "Do this"]}
               rows={[
-                ["Change env declared in config", "edit runix.yaml/toml → rx config reload"],
-                ["Pull your current shell env into an app", "rx restart <app> --update-env"],
-                ["Restart (PM2 muscle memory)", "rx reload <app>  (alias of restart)"],
+                ["Change env declared in config", "edit sm2.yaml/toml → sm2 config reload"],
+                ["Pull your current shell env into an app", "sm2 restart <app> --update-env"],
+                ["Restart (PM2 muscle memory)", "sm2 reload <app>  (alias of restart)"],
               ]}
             />
             <p>
-              <strong>How it works:</strong> <code className="tok">rx config reload</code>{" "}
+              <strong>How it works:</strong> <code className="tok">sm2 config reload</code>{" "}
               compares each app&apos;s spec — environment included — and restarts only the apps
               that changed. <code className="tok">--update-env</code> sends your shell&apos;s live
               environment to the agent, which uses it as the new base on relaunch (your explicit
@@ -254,20 +254,20 @@ health:
             </p>
             <p>
               <strong>One honest caveat:</strong> <code className="tok">reload</code> is an alias
-              of <code className="tok">restart</code> — Runix restarts the process, so there is a
+              of <code className="tok">restart</code> — sm2 restarts the process, so there is a
               brief moment of downtime. It is <em>not</em> a zero-downtime rolling reload like
-              PM2&apos;s cluster mode; true hand-off is language- and socket-specific, so Runix
+              PM2&apos;s cluster mode; true hand-off is language- and socket-specific, so sm2
               keeps the behavior simple and predictable across every runtime.
             </p>
-            <Code copy="rx restart api --update-env">
+            <Code copy="sm2 restart api --update-env">
               <span className={styles.prompt}>$ </span>export API_KEY=secret{"\n"}
-              <span className={styles.prompt}>$ </span>rx restart api --update-env{"  "}<span className={styles.cmt}># api now sees API_KEY</span>
+              <span className={styles.prompt}>$ </span>sm2 restart api --update-env{"  "}<span className={styles.cmt}># api now sees API_KEY</span>
             </Code>
           </section>
 
           <section id="triggers" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Restart triggers</h2>
-            <p>Beyond crash recovery, Runix can restart an app on three signals of its own:</p>
+            <p>Beyond crash recovery, sm2 can restart an app on three signals of its own:</p>
             <h3>Memory</h3>
             <p>
               <code className="tok">--max-memory-restart 300M</code> samples resident memory and
@@ -292,22 +292,22 @@ health:
             <h2><span className={styles.hash}>#</span>Persistence &amp; boot</h2>
             <p>
               <code className="tok">save</code> writes the current process list to{" "}
-              <code className="tok">~/.runix/dump.json</code>; <code className="tok">resurrect</code>{" "}
+              <code className="tok">~/.sm2/dump.json</code>; <code className="tok">resurrect</code>{" "}
               brings it back. <code className="tok">startup</code> generates a launchd agent (macOS)
               or systemd user unit (Linux) that runs <code className="tok">resurrect</code> at boot,
               so the machine returns to your apps after a restart.
             </p>
-            <Code copy="rx save">
-              <span className={styles.prompt}>$ </span>rx save{"\n"}
-              <span className={styles.prompt}>$ </span>rx startup{"    "}<span className={styles.cmt}># prints the enable command</span>{"\n"}
-              <span className={styles.prompt}>$ </span>rx resurrect{"  "}<span className={styles.cmt}># restore on demand</span>
+            <Code copy="sm2 save">
+              <span className={styles.prompt}>$ </span>sm2 save{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 startup{"    "}<span className={styles.cmt}># prints the enable command</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 resurrect{"  "}<span className={styles.cmt}># restore on demand</span>
             </Code>
           </section>
 
           <section id="notifications" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Notifications</h2>
             <p>
-              Enable the Discord webhook in <code className="tok">runix.yaml</code> and Runix posts
+              Enable the Discord webhook in <code className="tok">sm2.yaml</code> and sm2 posts
               on every lifecycle event: <code className="tok">started</code>,{" "}
               <code className="tok">stopped</code>, <code className="tok">crashed</code>, and{" "}
               <code className="tok">restarted</code> (with the restart count). Slack, Telegram and
@@ -330,7 +330,7 @@ health:
                 ["--plain", "Plain table, no box borders."],
                 ["--no-color", "Box without color."],
                 ["NO_COLOR=1", "Disable color (cross-tool standard)."],
-                ["RUNIX_FORCE_COLOR=1", "Force rich output when piping (e.g. to less -R)."],
+                ["SM2_FORCE_COLOR=1", "Force rich output when piping (e.g. to less -R)."],
               ]}
             />
           </section>

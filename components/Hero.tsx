@@ -2,7 +2,7 @@ import CopyButton from "./CopyButton";
 import SupervisorBoard from "./SupervisorBoard";
 import styles from "./Hero.module.css";
 
-const INSTALL = "go install github.com/abdorizak/runix/cmd/rx@latest";
+const INSTALL = "go install github.com/abdorizak/sm2/cmd/sm2@latest";
 
 export default function Hero() {
   return (
@@ -16,7 +16,7 @@ export default function Hero() {
             <span className={styles.accent}>running.</span>
           </h1>
           <p className={styles.lede}>
-            Runix runs your apps — any language, any command — and watches them.
+            sm2 runs your apps — any language, any command — and watches them.
             When something dies, it brings it back. One binary, a background
             agent, and a single file that describes your whole stack.
           </p>
@@ -27,7 +27,7 @@ export default function Hero() {
             </a>
             <a
               className={styles.secondary}
-              href="https://github.com/abdorizak/runix"
+              href="https://github.com/abdorizak/sm2"
               target="_blank"
               rel="noopener noreferrer"
             >
