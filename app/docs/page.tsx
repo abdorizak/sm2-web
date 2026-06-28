@@ -36,6 +36,7 @@ const COMMANDS: [string, string][] = [
   ["logs <name>", "Stream logs. Flags: -f/--follow, --stderr, -n/--lines."],
   ["flush [name]", "Empty log files for one app or all."],
   ["config <sub>", "init · show · validate · reload (see Configuration)."],
+  ["notify <sub>", "discord · test · status — set up notifications without a config file."],
   ["save", "Snapshot the process list to ~/.sm2/dump.json. Alias: dump."],
   ["resurrect", "Restart the apps from the last save."],
   ["startup", "Generate a launchd/systemd boot service."],
@@ -307,12 +308,33 @@ health:
           <section id="notifications" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Notifications</h2>
             <p>
-              Enable the Discord webhook in <code className="tok">sm2.yaml</code> and sm2 posts
-              on every lifecycle event: <code className="tok">started</code>,{" "}
-              <code className="tok">stopped</code>, <code className="tok">crashed</code>, and{" "}
-              <code className="tok">restarted</code> (with the restart count). Slack, Telegram and
-              email are on the roadmap.
+              sm2 posts to Discord on every lifecycle event:{" "}
+              <code className="tok">started</code>, <code className="tok">stopped</code>,{" "}
+              <code className="tok">crashed</code>, and <code className="tok">restarted</code>{" "}
+              (with the restart count). Slack, Telegram and email are on the roadmap.
             </p>
+            <p>
+              Set it up two ways. <strong>Without a config file</strong>, use the{" "}
+              <code className="tok">notify</code> command — it talks to the agent and persists
+              to <code className="tok">~/.sm2/notify.json</code>, so it survives restarts:
+            </p>
+            <Code copy='sm2 notify discord --webhook "https://discord.com/api/webhooks/…"'>
+              <span className={styles.prompt}>$ </span>sm2 notify discord --webhook &quot;https://discord.com/api/webhooks/…&quot;{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 notify test{"     "}<span className={styles.cmt}># send a test message</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 notify status{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 notify discord --disable
+            </Code>
+            <p>
+              Or declare it in <strong>config</strong> and apply with{" "}
+              <code className="tok">sm2 config reload</code>:
+            </p>
+            <Code>
+{`notifications:
+  discord:
+    enabled: true
+    webhook: "https://discord.com/api/webhooks/…"`}
+            </Code>
+            <p>Whichever you set last wins.</p>
           </section>
 
           <section id="output" className={styles.section}>
