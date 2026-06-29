@@ -26,10 +26,10 @@ const STEPS: Step[] = [
   {
     n: "02",
     title: "Start an app",
-    copy: 'sm2 start api --cmd "./api" --restart always',
+    copy: "sm2 start web --restart always -- npm run start",
     lines: [
-      { text: 'sm2 start api --cmd "./api" --restart always', prompt: true, tone: "cmd" },
-      { text: '✅ started "api"', tone: "ok" },
+      { text: "sm2 start web --restart always -- npm run start", prompt: true, tone: "cmd" },
+      { text: '✅ started "web"', tone: "ok" },
     ],
   },
   {

@@ -47,7 +47,8 @@ const COMMANDS: [string, string][] = [
 ];
 
 const FLAGS: [string, string][] = [
-  ["--cmd <cmd>", "Command to run (required)."],
+  ["-- <command…>", "The command to run, passed after --. e.g. -- npm run start"],
+  ["--cmd <shell>", "Optional: a shell one-liner instead of -- (for pipes / &&)."],
   ["--dir, --cwd <path>", "Working directory."],
   ["-e, --env KEY=VALUE", "Environment variable (repeatable)."],
   ["--restart <policy>", "always | on-failure | never. Default: on-failure."],
@@ -151,8 +152,8 @@ export default function DocsPage() {
 
           <section id="quickstart" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Quick start</h2>
-            <Code copy={'sm2 start api --cmd "./api" --restart always'}>
-              <span className={styles.prompt}>$ </span>sm2 start api --cmd &quot;./api&quot; --restart always{"\n"}
+            <Code copy={"sm2 start web --restart always -- npm run start"}>
+              <span className={styles.prompt}>$ </span>sm2 start web --restart always -- npm run start{"\n"}
               <span className={styles.prompt}>$ </span>sm2 status{"\n"}
               <span className={styles.prompt}>$ </span>sm2 logs api --follow{"\n"}
               <span className={styles.prompt}>$ </span>sm2 restart api{"\n"}
@@ -261,7 +262,7 @@ health:
               rows={[
                 ["Change env declared in config", "edit sm2.yaml/toml → sm2 config reload"],
                 ["Pull your current shell env into an app", "sm2 restart <app> --update-env"],
-                ["Restart (PM2 muscle memory)", "sm2 reload <app>  (alias of restart)"],
+                ["Reload an app", "sm2 reload <app>  (alias of restart)"],
               ]}
             />
             <p>
@@ -274,9 +275,9 @@ health:
             <p>
               <strong>One honest caveat:</strong> <code className="tok">reload</code> is an alias
               of <code className="tok">restart</code> — sm2 restarts the process, so there is a
-              brief moment of downtime. It is <em>not</em> a zero-downtime rolling reload like
-              PM2&apos;s cluster mode; true hand-off is language- and socket-specific, so sm2
-              keeps the behavior simple and predictable across every runtime.
+              brief moment of downtime. It is <em>not</em> a zero-downtime rolling reload —
+              true hand-off is language- and socket-specific, so sm2 keeps the behavior simple
+              and predictable across every runtime.
             </p>
             <Code copy="sm2 restart api --update-env">
               <span className={styles.prompt}>$ </span>export API_KEY=secret{"\n"}
@@ -358,7 +359,7 @@ health:
           <section id="output" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Output &amp; color</h2>
             <p>
-              On a terminal, <code className="tok">status</code> prints a PM2-style colored box —
+              On a terminal, <code className="tok">status</code> prints a colored box —
               columns: <code className="tok">id · name · namespace · version · mode · pid · uptime ·
               ↺ · status · cpu · mem · user · watching</code> (RUNNING green, FAILED red,
               RESTARTING yellow, STOPPED dim). When piped it falls back to plain tab-separated
