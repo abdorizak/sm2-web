@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const NAV: [string, string][] = [
   ["install", "Install"],
   ["quickstart", "Quick start"],
+  ["examples", "Examples"],
   ["commands", "Commands"],
   ["flags", "Start flags"],
   ["config", "Configuration"],
@@ -155,10 +156,35 @@ export default function DocsPage() {
             <Code copy={"sm2 start web --restart always -- npm run start"}>
               <span className={styles.prompt}>$ </span>sm2 start web --restart always -- npm run start{"\n"}
               <span className={styles.prompt}>$ </span>sm2 status{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 logs api --follow{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 restart api{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 logs web --follow{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 restart web{"\n"}
               <span className={styles.prompt}>$ </span>sm2 save{"  "}<span className={styles.cmt}># survive reboots</span>
             </Code>
+          </section>
+
+          <section id="examples" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Examples</h2>
+            <p>
+              Real-world starts (sm2 flags go before <code className="tok">--</code>, the command
+              after it):
+            </p>
+            <Code>
+              <span className={styles.prompt}>$ </span>sm2 start abdorizak.dev --restart always -- npm run start{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start billing-api -i 3 -- ./billing-server{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start email-worker --restart on-failure -- python worker.py{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start cache -- redis-server --port 6380{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start nightly-report --cron-restart &quot;0 3 * * *&quot; -- ./report.sh{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start landing --watch --dir /srv/landing -- npm run dev{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start metrics --max-memory-restart 300M --namespace infra -- ./metrics{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 start bot -e TOKEN=xoxb-… -- node telegram-bot.js
+            </Code>
+            <p>
+              Then manage them by name, <code className="tok">all</code>, or namespace:{" "}
+              <code className="tok">sm2 restart billing-api</code>,{" "}
+              <code className="tok">sm2 logs email-worker -f</code>,{" "}
+              <code className="tok">sm2 stop --namespace infra</code>,{" "}
+              <code className="tok">sm2 delete all</code>.
+            </p>
           </section>
 
           <section id="commands" className={styles.section}>
@@ -316,6 +342,12 @@ health:
               brings it back. <code className="tok">startup</code> generates a launchd agent (macOS)
               or systemd user unit (Linux) that runs <code className="tok">resurrect</code> at boot,
               so the machine returns to your apps after a restart.
+            </p>
+            <p>
+              <strong>Self-healing:</strong> the agent also auto-saves its live process list to{" "}
+              <code className="tok">~/.sm2/state.json</code> on every change and resurrects it
+              automatically if the agent itself restarts — apps you deliberately{" "}
+              <code className="tok">stop</code> stay stopped.
             </p>
             <Code copy="sm2 save">
               <span className={styles.prompt}>$ </span>sm2 save{"\n"}
