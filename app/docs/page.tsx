@@ -354,6 +354,12 @@ health:
     webhook: "https://discord.com/api/webhooks/…"`}
             </Code>
             <p>Whichever you set last wins.</p>
+            <p>
+              Messages are rich, color-coded embeds (app · event · host · details), and
+              delivery is <strong>reliable</strong>: sm2 honors Discord&apos;s rate limit
+              (<code className="tok">Retry-After</code> on 429) and retries transient failures
+              with backoff, so important events aren&apos;t silently dropped.
+            </p>
           </section>
 
           <section id="output" className={styles.section}>
