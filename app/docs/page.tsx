@@ -50,7 +50,7 @@ const COMMANDS: [string, string][] = [
 const FLAGS: [string, string][] = [
   ["-- <command…>", "The command to run, passed after --. e.g. -- npm run start"],
   ["--cmd <shell>", "Optional: a shell one-liner instead of -- (for pipes / &&)."],
-  ["--dir, --cwd <path>", "Working directory."],
+  ["--dir, --cwd <path>", "Working directory (default: where you ran sm2)."],
   ["-e, --env KEY=VALUE", "Environment variable (repeatable)."],
   ["--restart <policy>", "always | on-failure | never. Default: on-failure."],
   ["--max-retries <n>", "Cap auto-restarts (0 = unlimited). Alias: --max-restarts."],
