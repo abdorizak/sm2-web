@@ -80,6 +80,39 @@ function Code({ children, copy }: { children: React.ReactNode; copy?: string }) 
   );
 }
 
+// Shell renders a block of example commands. Lines starting with "#" are
+// comments; everything else gets a $ prompt. Values are auto-escaped by React.
+function Shell({ lines }: { lines: string[] }) {
+  return (
+    <div className={styles.code}>
+      <pre>
+        {lines.map((l, i) =>
+          l.startsWith("#") ? (
+            <div key={i} className={styles.cmt}>
+              {l}
+            </div>
+          ) : (
+            <div key={i}>
+              <span className={styles.prompt}>$ </span>
+              {l}
+            </div>
+          )
+        )}
+      </pre>
+    </div>
+  );
+}
+
+// Recipe is one titled example block.
+function Recipe({ title, lines }: { title: string; lines: string[] }) {
+  return (
+    <>
+      <h3>{title}</h3>
+      <Shell lines={lines} />
+    </>
+  );
+}
+
 function Table({ head, rows }: { head: [string, string]; rows: [string, string][] }) {
   return (
     <table className={styles.table}>
@@ -165,26 +198,165 @@ export default function DocsPage() {
           <section id="examples" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Examples</h2>
             <p>
-              Real-world starts (sm2 flags go before <code className="tok">--</code>, the command
-              after it):
+              A cookbook of real commands. The rule throughout: sm2&apos;s own flags go{" "}
+              <strong>before</strong> <code className="tok">--</code>, and the program to run goes{" "}
+              <strong>after</strong> it.
+            </p>
+
+            <Recipe
+              title="Start any language"
+              lines={[
+                "sm2 start web -- npm run start",
+                "sm2 start dash -- yarn start",
+                "sm2 start api -- ./api --port 8080",
+                "sm2 start worker -- python worker.py",
+                "sm2 start cache -- redis-server --port 6380",
+                "sm2 start site -- php -S 0.0.0.0:8000",
+                "# any executable works — sm2 doesn't care about the language",
+              ]}
+            />
+
+            <Recipe
+              title="Working directory (no --dir needed)"
+              lines={[
+                "# sm2 runs in the directory you're standing in",
+                "cd /opt/web && sm2 start web -- npm run start",
+                "",
+                "# or point at it; a relative path resolves against your cwd",
+                "sm2 start api --dir /opt/api -- ./api",
+                "cd /opt && sm2 start api --dir project/api -- ./api",
+              ]}
+            />
+
+            <h3>A project with several apps</h3>
+            <p>
+              Say <code className="tok">/opt/xproject</code> holds an <code className="tok">api</code>{" "}
+              and a <code className="tok">web</code>. Start each on its own:
+            </p>
+            <Shell
+              lines={[
+                "cd /opt/xproject",
+                "sm2 start xapi --dir api -- ./api",
+                "sm2 start xweb --dir web -- npm run start",
+              ]}
+            />
+            <p>
+              …or declare both in <code className="tok">/opt/xproject/sm2.toml</code> (use absolute
+              <code className="tok"> directory</code> paths) and bring the whole project up at once:
             </p>
             <Code>
-              <span className={styles.prompt}>$ </span>sm2 start abdorizak.dev --restart always -- npm run start{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start billing-api -i 3 -- ./billing-server{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start email-worker --restart on-failure -- python worker.py{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start cache -- redis-server --port 6380{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start nightly-report --cron-restart &quot;0 3 * * *&quot; -- ./report.sh{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start landing --watch --dir /srv/landing -- npm run dev{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start metrics --max-memory-restart 300M --namespace infra -- ./metrics{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 start bot -e TOKEN=xoxb-… -- node telegram-bot.js
+{`[apps.api]
+command = "./api"
+directory = "/opt/xproject/api"
+namespace = "xproject"
+restart = { policy = "always" }
+
+[apps.web]
+command = "npm run start"
+directory = "/opt/xproject/web"
+namespace = "xproject"
+restart = { policy = "always" }
+environment = { PORT = "3001" }`}
             </Code>
-            <p>
-              Then manage them by name, <code className="tok">all</code>, or namespace:{" "}
-              <code className="tok">sm2 restart billing-api</code>,{" "}
-              <code className="tok">sm2 logs email-worker -f</code>,{" "}
-              <code className="tok">sm2 stop --namespace infra</code>,{" "}
-              <code className="tok">sm2 delete all</code>.
-            </p>
+            <Shell
+              lines={[
+                "cd /opt/xproject",
+                "sm2 config reload            # start BOTH api and web",
+                "sm2 restart --namespace xproject   # control them as a group",
+                "sm2 stop --namespace xproject",
+                "sm2 logs xapi --follow",
+              ]}
+            />
+
+            <Recipe
+              title="Run several copies (scale)"
+              lines={[
+                "sm2 start web -i 4 -- npm run start   # web-0 … web-3",
+                "sm2 status                            # all four listed",
+                "sm2 delete web-2                      # drop one instance",
+              ]}
+            />
+
+            <Recipe
+              title="Control how it restarts"
+              lines={[
+                "sm2 start api --restart always -- ./api          # always bring it back",
+                "sm2 start job --restart on-failure -- ./job      # only if it errors",
+                "sm2 start once --restart never -- ./migrate      # run, don't restart",
+                "sm2 start api --max-retries 5 -- ./api           # give up after 5",
+                "sm2 start api --restart-delay 2s -- ./api        # wait 2s between tries",
+                "sm2 start api --exp-backoff-restart-delay 200ms -- ./api",
+                "sm2 start api --kill-timeout 15s -- ./api        # grace before SIGKILL",
+              ]}
+            />
+
+            <Recipe
+              title="Restart on triggers"
+              lines={[
+                "sm2 start dev --watch -- npm run dev                       # on file change",
+                "sm2 start dev --watch --ignore-watch node_modules -- npm run dev",
+                'sm2 start nightly --cron-restart "0 3 * * *" -- ./report.sh  # 3am daily',
+                "sm2 start svc --max-memory-restart 300M -- ./svc           # over 300MB",
+              ]}
+            />
+
+            <Recipe
+              title="Environment variables"
+              lines={[
+                "sm2 start api -e PORT=8080 -e NODE_ENV=production -- ./api",
+                "sm2 start bot -e TOKEN=xoxb-… -- node bot.js",
+                "",
+                "# refresh a running app with your current shell env:",
+                "export API_KEY=new-secret",
+                "sm2 restart api --update-env",
+              ]}
+            />
+
+            <Recipe
+              title="Target one, all, or a namespace"
+              lines={[
+                "sm2 restart api                 # one app",
+                "sm2 stop all                    # everything",
+                "sm2 restart --namespace web     # a whole group",
+                "sm2 delete all                  # stop & forget everything",
+                "sm2 signal HUP api              # send a signal",
+              ]}
+            />
+
+            <Recipe
+              title="Inspect & logs"
+              lines={[
+                "sm2 status            # colored box (alias: ls, ps)",
+                "sm2 status --json     # machine-readable",
+                "sm2 describe api      # every parameter of one app",
+                "sm2 logs api          # last lines",
+                "sm2 logs api --follow # live tail",
+                "sm2 logs api --stderr -n 200",
+                "sm2 flush api         # empty its logs",
+              ]}
+            />
+
+            <Recipe
+              title="Notifications (Discord)"
+              lines={[
+                'sm2 notify discord --webhook "https://discord.com/api/webhooks/…"',
+                "sm2 notify test       # send a test message",
+                "sm2 notify status",
+                "sm2 notify discord --disable",
+              ]}
+            />
+
+            <Recipe
+              title="Survive crashes & reboots"
+              lines={[
+                "sm2 save              # snapshot the process list",
+                "sm2 resurrect         # bring the snapshot back",
+                "sm2 startup           # generate a boot service (launchd/systemd)",
+                "sm2 ping              # is the agent up?",
+                "sm2 kill              # stop the agent and all apps",
+                "# the agent also auto-saves & self-heals if it restarts",
+              ]}
+            />
           </section>
 
           <section id="commands" className={styles.section}>
