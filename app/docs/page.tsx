@@ -44,6 +44,7 @@ const COMMANDS: [string, string][] = [
   ["unstartup", "Remove the boot service."],
   ["ping", "Check the agent is up (starts it if not)."],
   ["kill", "Stop the agent and every managed app."],
+  ["update", "Update sm2 to the latest release. --check to only check."],
   ["version", "Print the sm2 version."],
 ];
 
@@ -355,6 +356,16 @@ environment = { PORT = "3001" }`}
                 "sm2 ping              # is the agent up?",
                 "sm2 kill              # stop the agent and all apps",
                 "# the agent also auto-saves & self-heals if it restarts",
+              ]}
+            />
+
+            <Recipe
+              title="Update sm2 itself"
+              lines={[
+                "sm2 update            # download & install the latest release",
+                "sm2 update --check    # just check, don't install",
+                "sm2 kill              # restart the agent on the new version",
+                "# (use sudo if sm2 lives in a root-owned dir like /usr/local/bin)",
               ]}
             />
           </section>
