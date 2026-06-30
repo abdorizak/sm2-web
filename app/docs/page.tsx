@@ -22,6 +22,7 @@ const NAV: [string, string][] = [
   ["triggers", "Restart triggers"],
   ["persistence", "Persistence & boot"],
   ["notifications", "Notifications"],
+  ["logrotate", "Log rotation"],
   ["output", "Output & color"],
 ];
 
@@ -38,6 +39,7 @@ const COMMANDS: [string, string][] = [
   ["flush [name]", "Empty log files for one app or all."],
   ["config <sub>", "init · show · validate · reload (see Configuration)."],
   ["notify <sub>", "discord · test · status — set up notifications without a config file."],
+  ["set <key> <value>", "Configure log rotation: logs.max_size, logs.retain, logs.compress, logs.interval, logs.rotate."],
   ["save", "Snapshot the process list to ~/.sm2/dump.json. Alias: dump."],
   ["resurrect", "Restart the apps from the last save."],
   ["startup", "Generate a launchd/systemd boot service."],
@@ -575,6 +577,43 @@ health:
               (<code className="tok">Retry-After</code> on 429) and retries transient failures
               with backoff, so important events aren&apos;t silently dropped.
             </p>
+          </section>
+
+          <section id="logrotate" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Log rotation</h2>
+            <p>
+              By default sm2 appends each app&apos;s output to{" "}
+              <code className="tok">~/.sm2/logs/&lt;name&gt;.stdout.log</code> and{" "}
+              <code className="tok">.stderr.log</code>. Turn on rotation so those files
+              manage themselves instead of growing forever:
+            </p>
+            <Code copy="sm2 set logs.max_size 50M">
+              <span className={styles.prompt}>$ </span>sm2 set logs.max_size 50M{"        "}<span className={styles.cmt}># rotate once a log passes 50 MB</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set logs.retain 7{"            "}<span className={styles.cmt}># keep 7 rotated files, prune the rest</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set logs.compress true{"       "}<span className={styles.cmt}># gzip rotated files (web.stdout.log.1.gz)</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set logs.interval &quot;0 0 * * *&quot;{"  "}<span className={styles.cmt}># also rotate daily at midnight (optional)</span>{"\n"}
+              {"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set{"                        "}<span className={styles.cmt}># show current settings</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set logs.rotate off{"          "}<span className={styles.cmt}># turn rotation back off</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set logs.rotate now{"          "}<span className={styles.cmt}># rotate every log immediately</span>
+            </Code>
+            <p>
+              Setting any <code className="tok">logs.*</code> option turns rotation on.
+              Settings persist to <code className="tok">~/.sm2/logrotate.json</code> and
+              survive restarts. The agent checks sizes every 30s (and on the cron schedule,
+              if set). Rotation is <strong>copy-truncate</strong>, so your apps keep logging
+              without a restart — no reopening, no lost process. If Discord notifications are
+              enabled, sm2 also pings you when a log is rotated for exceeding its limit.
+            </p>
+            <p>You can declare the same thing in <strong>config</strong>:</p>
+            <Code>
+{`logs:
+  rotate: true
+  max_size: 50M
+  retain: 7
+  compress: true
+  interval: "0 0 * * *"   # optional`}
+            </Code>
           </section>
 
           <section id="output" className={styles.section}>
