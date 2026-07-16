@@ -500,12 +500,12 @@ environment = { PORT = "3001" }`}
             />
 
             <Recipe
-              title="Disk-space alerts"
+              title="Disk-space alerts (on by default)"
               lines={[
-                "sm2 set disk.monitor on       # watch free disk space",
                 "sm2 set disk.threshold 15     # alert below 15% free (default 10)",
                 "sm2 set disk.path /var        # watch a different filesystem",
                 "sm2 set                       # show current settings",
+                "sm2 set disk.monitor off      # opt out",
               ]}
             />
 
@@ -797,21 +797,20 @@ health:
             <p>
               A full disk is the classic silent failure: logs stop writing, databases stop
               accepting, apps crash with confusing errors — and nothing tells you <em>why</em>{" "}
-              until you ssh in and run <code className="tok">df</code>. sm2 can watch free disk
-              space for you and warn you <strong>before</strong> the server runs out, through
-              the same Discord pipeline as every other event:
+              until you ssh in and run <code className="tok">df</code>. So sm2 watches free
+              disk space <strong>by default</strong> — configure a Discord webhook and
+              you&apos;ll be warned before the server runs out, with nothing else to enable:
             </p>
-            <Code copy="sm2 set disk.monitor on">
-              <span className={styles.prompt}>$ </span>sm2 set disk.monitor on{"      "}<span className={styles.cmt}># start watching (filesystem holding ~/.sm2)</span>{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 set disk.threshold 15{"    "}<span className={styles.cmt}># alert when free space drops below 15%</span>{"\n"}
+            <Code copy="sm2 set disk.threshold 15">
+              <span className={styles.prompt}>$ </span>sm2 set disk.threshold 15{"    "}<span className={styles.cmt}># alert when free space drops below 15% (default 10)</span>{"\n"}
               <span className={styles.prompt}>$ </span>sm2 set disk.path /var{"       "}<span className={styles.cmt}># watch a different filesystem (optional)</span>{"\n"}
               <span className={styles.prompt}>$ </span>sm2 set{"                      "}<span className={styles.cmt}># show current settings</span>{"\n"}
-              <span className={styles.prompt}>$ </span>sm2 set disk.monitor off{"     "}<span className={styles.cmt}># stop watching</span>
+              <span className={styles.prompt}>$ </span>sm2 set disk.monitor off{"     "}<span className={styles.cmt}># opt out entirely</span>
             </Code>
             <Table
               head={["Key", "Meaning"]}
               rows={[
-                ["disk.monitor on|off", "Master switch. Setting any other disk.* key turns it on."],
+                ["disk.monitor on|off", "Master switch — on by default. Turn it off to opt out."],
                 ["disk.threshold <percent>", "Free-space percentage that triggers the alert. Default: 10."],
                 ["disk.path <path>", "Any path on the filesystem to watch. Default: the one holding ~/.sm2 — usually the disk your logs grow on."],
               ]}
