@@ -124,6 +124,28 @@
   right: 0.55rem;
 }
 
+/* prose lists */
+.list {
+  color: var(--haze);
+  margin: 0 0 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 64ch;
+}
+.list strong {
+  color: var(--paper);
+}
+
+/* event color chip — mirrors the Discord embed color of each event */
+.chip {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
+  margin-right: 0.55rem;
+}
+
 /* tables */
 .table {
   width: 100%;
@@ -154,6 +176,7 @@
   font-family: var(--mono);
   font-size: 0.84em;
   color: var(--amber);
+  white-space: nowrap;
 }
 .table td:not(:first-child) {
   color: var(--haze);

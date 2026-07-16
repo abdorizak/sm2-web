@@ -24,7 +24,7 @@ const FEATURES = [
   {
     tag: "notifications",
     title: "Tells you when it matters",
-    body: "Get a message the moment something starts, stops, crashes, or recovers. Discord today; Slack, Telegram, and email next.",
+    body: "Get a message the moment an app starts, stops, crashes, or recovers — and when the server's disk runs low or the agent shuts down. Discord today; Slack, Telegram, and email next.",
   },
   {
     tag: "single binary",
@@ -40,6 +40,11 @@ const FEATURES = [
     tag: "--watch · --cron-restart",
     title: "Restarts on your terms",
     body: "Reload on file changes, recycle on a cron schedule, or restart automatically when a process crosses a memory limit with --max-memory-restart.",
+  },
+  {
+    tag: "sm2 set",
+    title: "Minds the machine",
+    body: "Built-in log rotation with size limits, retention, and gzip — plus a disk-space monitor that warns you before the server fills up. One statfs a minute, zero overhead.",
   },
 ];
 

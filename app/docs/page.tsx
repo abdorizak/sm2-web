@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const NAV: [string, string][] = [
   ["install", "Install"],
   ["quickstart", "Quick start"],
+  ["languages", "Languages & runtimes"],
   ["examples", "Examples"],
   ["commands", "Commands"],
   ["flags", "Start flags"],
@@ -22,6 +23,7 @@ const NAV: [string, string][] = [
   ["triggers", "Restart triggers"],
   ["persistence", "Persistence & boot"],
   ["notifications", "Notifications"],
+  ["disk", "Disk-space alerts"],
   ["logrotate", "Log rotation"],
   ["output", "Output & color"],
 ];
@@ -39,7 +41,7 @@ const COMMANDS: [string, string][] = [
   ["flush [name]", "Empty log files for one app or all."],
   ["config <sub>", "init · show · validate · reload (see Configuration)."],
   ["notify <sub>", "discord · test · status — set up notifications without a config file."],
-  ["set <key> <value>", "Configure log rotation: logs.max_size, logs.retain, logs.compress, logs.interval, logs.rotate."],
+  ["set <key> <value>", "Runtime settings: logs.* (log rotation) and disk.* (disk-space alerts). Run bare sm2 set to show current values."],
   ["save", "Snapshot the process list to ~/.sm2/dump.json. Alias: dump."],
   ["resurrect", "Restart the apps from the last save."],
   ["startup", "Generate a launchd/systemd boot service."],
@@ -68,6 +70,34 @@ const FLAGS: [string, string][] = [
   ["--watch", "Restart when files change."],
   ["--ignore-watch <frag>", "Path fragment to ignore while watching (repeatable)."],
   ["--cron-restart <expr>", "Restart on a 5-field cron schedule."],
+];
+
+// [runtime, start line, note] — every entry is a plain terminal command; sm2
+// adds supervision around it, never language-specific behavior.
+const RUNTIMES: [string, string, string][] = [
+  ["Node.js", "sm2 start web -- npm run start", "npm/yarn/pnpm scripts or node server.js — sm2 signals the whole process tree, so wrappers are fine."],
+  ["Bun / Deno", "sm2 start api -- bun run index.ts", "Same story: deno run --allow-net main.ts works too."],
+  ["Python", "sm2 start worker -- python3 worker.py", "For a venv, use its interpreter directly: -- /srv/app/venv/bin/python worker.py (no activate needed)."],
+  ["Go", "sm2 start api -- ./api", "Supervise the compiled binary. go run works, but see the production tip below."],
+  ["Rust", "sm2 start svc -- ./target/release/svc", "Build with --release, run the artifact."],
+  ["Java / JVM", "sm2 start app -- java -jar app.jar", "Kotlin, Scala, Spring Boot — anything java launches."],
+  ["PHP", "sm2 start site -- php -S 0.0.0.0:8000", "Or a long-running worker: php artisan queue:work."],
+  ["Ruby", "sm2 start web -- bundle exec puma", "bundle exec keeps the right gem versions."],
+  [".NET", "sm2 start app -- dotnet App.dll", "Publish first; dotnet run is the dev loop."],
+  ["Shell / anything", "sm2 start backup -- ./backup.sh", "Any executable file. For pipes or &&, use --cmd \"…\"."],
+  ["Docker", "sm2 start cache -- docker run --rm redis", "Run the container in the foreground (no -d) so sm2 owns its lifecycle."],
+];
+
+// [embed color, event name, when it fires] — colors mirror the Discord embeds.
+const EVENTS: [string, string, string][] = [
+  ["#57F287", "started", "An app launched — via start, resurrect, or config reload."],
+  ["#FEE75C", "restarted", "sm2 brought an app back: auto-restart after an exit (with the attempt count), a manual restart, or a memory / watch / cron trigger (the reason is in the message)."],
+  ["#99AAB5", "stopped", "An app was stopped deliberately and exited cleanly."],
+  ["#ED4245", "crashed", "An app is down and sm2 will not restart it: the policy forbids it, the retry limit is exhausted, or the relaunch itself failed."],
+  ["#5865F2", "log rotated", "A log file crossed its size limit and was rotated (see Log rotation)."],
+  ["#E67E22", "disk space low", "Free disk space dropped below your threshold (see Disk-space alerts). Repeats every 6h while it stays low."],
+  ["#57F287", "disk space recovered", "Free space climbed back above the threshold (plus a small margin, so it can't flap)."],
+  ["#99AAB5", "agent stopping", "The sm2 agent itself received SIGTERM/SIGINT and is shutting down, taking its apps with it."],
 ];
 
 function Code({ children, copy }: { children: React.ReactNode; copy?: string }) {
@@ -152,8 +182,10 @@ export default function DocsPage() {
         <main className={styles.content}>
           <h1 className={styles.lead}>Documentation</h1>
           <p className={styles.leadSub}>
-            Everything the sm2 CLI can do. Commands target an app by name,{" "}
-            <code className="tok">all</code>, or a <code className="tok">--namespace</code>.
+            Everything sm2 can do, explained like a person would. One mental model
+            carries you through all of it: every command targets an app by name,{" "}
+            <code className="tok">all</code>, or a <code className="tok">--namespace</code> —
+            and when in doubt, <code className="tok">sm2 &lt;cmd&gt; --help</code> knows.
           </p>
 
           <section id="install" className={styles.section}>
@@ -189,6 +221,11 @@ export default function DocsPage() {
 
           <section id="quickstart" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Quick start</h2>
+            <p>
+              This is the whole job in five lines — start an app, look at it, tail it,
+              bounce it, and make it survive a reboot. Everything else in these docs is
+              refinement of these five.
+            </p>
             <Code copy={"sm2 start web --restart always -- npm run start"}>
               <span className={styles.prompt}>$ </span>sm2 start web --restart always -- npm run start{"\n"}
               <span className={styles.prompt}>$ </span>sm2 status{"\n"}
@@ -198,10 +235,123 @@ export default function DocsPage() {
             </Code>
           </section>
 
+          <section id="languages" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Languages &amp; runtimes</h2>
+            <p>
+              <strong>sm2 supports every language</strong>, because it never touches your
+              code. There is no Node plugin, no Python mode, no language detection: sm2
+              takes the command you&apos;d type in a terminal and supervises the process it
+              creates. If the line works in your shell, the same line works under sm2.
+            </p>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Runtime</th>
+                  <th>Start line</th>
+                  <th>Worth knowing</th>
+                </tr>
+              </thead>
+              <tbody>
+                {RUNTIMES.map(([rt, line, note]) => (
+                  <tr key={rt}>
+                    <td>{rt}</td>
+                    <td><code>{line}</code></td>
+                    <td>{note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h3>How sm2 actually runs your command</h3>
+            <p>Understanding this pipeline resolves almost every &quot;why won&apos;t it start?&quot; question:</p>
+            <ol className={styles.list}>
+              <li>
+                <strong>The CLI captures one shell line.</strong> Everything after{" "}
+                <code className="tok">--</code> is joined into a single command string, along
+                with your working directory (defaulting to where you ran{" "}
+                <code className="tok">sm2 start</code>) and any <code className="tok">-e</code>{" "}
+                variables, and hands it to the background agent.
+              </li>
+              <li>
+                <strong>The agent spawns it via the shell.</strong> Your line runs as{" "}
+                <code className="tok">sh -c &quot;…&quot;</code> in that working directory, with an
+                environment built from the agent&apos;s base env plus your overrides.
+              </li>
+              <li>
+                <strong>It gets its own process group.</strong> Whatever your command spawns —{" "}
+                <code className="tok">npm</code> → <code className="tok">node</code> → worker
+                threads — is one tree that sm2 owns. Stop, restart, and{" "}
+                <code className="tok">signal</code> hit the whole group, so nothing is orphaned.
+              </li>
+              <li>
+                <strong>Output is captured.</strong> stdout and stderr append to{" "}
+                <code className="tok">~/.sm2/logs/&lt;name&gt;.stdout.log</code> /{" "}
+                <code className="tok">.stderr.log</code> — that&apos;s what{" "}
+                <code className="tok">sm2 logs</code> reads.
+              </li>
+              <li>
+                <strong>Shutdown is graceful, then firm.</strong> Stopping sends SIGTERM to the
+                group, waits the grace period (default 5s,{" "}
+                <code className="tok">--kill-timeout</code>), then SIGKILLs anything still alive.
+              </li>
+            </ol>
+
+            <h3>The three rules that clear up most confusion</h3>
+            <ul className={styles.list}>
+              <li>
+                <strong>1. Run in the foreground.</strong> sm2 supervises the process it
+                started, so the command must <em>keep running</em> — don&apos;t daemonize. No{" "}
+                <code className="tok">nohup</code>, no trailing <code className="tok">&amp;</code>,
+                no <code className="tok">docker run -d</code>, no{" "}
+                <code className="tok">gunicorn --daemon</code>. If your app forks itself into the
+                background, sm2 sees an instant exit and reports a crash loop that isn&apos;t
+                real. Every server has a foreground mode; use it and let sm2 do the daemonizing.
+              </li>
+              <li>
+                <strong>2. The interpreter must be on the agent&apos;s PATH.</strong> sm2
+                doesn&apos;t bundle Node or Python — your server provides them, and the agent
+                inherits the environment it was <em>first started</em> with, not your current
+                shell profile. Version managers (nvm, pyenv, rbenv) load their shims in{" "}
+                <em>interactive</em> shells, so the agent may not see them. If your shell finds{" "}
+                <code className="tok">node</code> but sm2 says &quot;command not found&quot;, give
+                it the absolute path (<code className="tok">which node</code> tells you), e.g.{" "}
+                <code className="tok">sm2 start web -- /home/deploy/.nvm/versions/node/v22.2.0/bin/node server.js</code>{" "}
+                — or refresh a running app&apos;s env with{" "}
+                <code className="tok">sm2 restart web --update-env</code>.
+              </li>
+              <li>
+                <strong>3. It&apos;s one shell line.</strong> Arguments after{" "}
+                <code className="tok">--</code> are joined with spaces and run by{" "}
+                <code className="tok">sh</code>. Plain commands and flags pass through exactly as
+                typed; for pipes, <code className="tok">&amp;&amp;</code>, or arguments that
+                themselves contain spaces, put the whole line in{" "}
+                <code className="tok">--cmd &quot;…&quot;</code> so you control the quoting:{" "}
+                <code className="tok">sm2 start job --cmd &quot;./gen | gzip &gt; out.gz&quot;</code>.
+              </li>
+            </ul>
+
+            <h3>Production tip: run binaries, not build tools</h3>
+            <p>
+              <code className="tok">go run</code>, <code className="tok">cargo run</code> and
+              friends work under sm2, but they recompile on every restart and put a build
+              tool between sm2 and your real process. On a server, build once and supervise
+              the artifact — restarts get faster and memory stats describe your app, not the
+              compiler:
+            </p>
+            <Shell
+              lines={[
+                "go build -o api . && sm2 start api -- ./api",
+                "cargo build --release && sm2 start svc -- ./target/release/svc",
+                "npm run build && sm2 start web -- node dist/server.js",
+              ]}
+            />
+          </section>
+
           <section id="examples" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Examples</h2>
             <p>
-              A cookbook of real commands. The rule throughout: sm2&apos;s own flags go{" "}
+              A cookbook of real commands to lift straight into your terminal. One rule holds
+              everywhere, and it&apos;s the only syntax worth memorizing: sm2&apos;s own flags go{" "}
               <strong>before</strong> <code className="tok">--</code>, and the program to run goes{" "}
               <strong>after</strong> it.
             </p>
@@ -350,6 +500,16 @@ environment = { PORT = "3001" }`}
             />
 
             <Recipe
+              title="Disk-space alerts"
+              lines={[
+                "sm2 set disk.monitor on       # watch free disk space",
+                "sm2 set disk.threshold 15     # alert below 15% free (default 10)",
+                "sm2 set disk.path /var        # watch a different filesystem",
+                "sm2 set                       # show current settings",
+              ]}
+            />
+
+            <Recipe
               title="Survive crashes & reboots"
               lines={[
                 "sm2 save              # snapshot the process list",
@@ -374,16 +534,23 @@ environment = { PORT = "3001" }`}
 
           <section id="commands" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Commands</h2>
-            <p>Twenty commands. Run <code className="tok">sm2 &lt;cmd&gt; --help</code> for usage.</p>
+            <p>
+              The full set. Each one does a single, guessable thing — and if you&apos;re
+              arriving from pm2, your muscle memory mostly still works
+              (<code className="tok">ls</code>, <code className="tok">ps</code>,{" "}
+              <code className="tok">del</code> and friends are all aliased).
+            </p>
             <Table head={["Command", "Description"]} rows={COMMANDS} />
           </section>
 
           <section id="flags" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Start flags</h2>
             <p>
-              Flags for <code className="tok">sm2 start</code>. Durations accept Go syntax
-              (<code className="tok">500ms</code>, <code className="tok">10s</code>); sizes accept{" "}
-              <code className="tok">K</code>/<code className="tok">M</code>/<code className="tok">G</code>.
+              Flags tune <em>how an app is supervised</em>, never what it runs — the command
+              itself always goes after <code className="tok">--</code>. Durations read
+              naturally (<code className="tok">500ms</code>, <code className="tok">10s</code>);
+              sizes take <code className="tok">K</code>/<code className="tok">M</code>/
+              <code className="tok">G</code>.
             </p>
             <Table head={["Flag", "Description"]} rows={FLAGS} />
             <h3>Global flags</h3>
@@ -399,14 +566,15 @@ environment = { PORT = "3001" }`}
           <section id="config" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Configuration</h2>
             <p>
-              Declare your whole stack in <code className="tok">sm2.yaml</code> or{" "}
-              <code className="tok">sm2.toml</code> (sm2 picks the parser by extension),
-              then run <code className="tok">sm2 config reload</code> — sm2 reconciles the
-              running set to match (starts new, stops removed, restarts changed). Lookup
-              order: <code className="tok">--config</code> →{" "}
-              <code className="tok">./sm2.toml</code> →{" "}
-              <code className="tok">./sm2.yaml</code> →{" "}
-              <code className="tok">~/.sm2/</code>.
+              The CLI is great for one-off apps; a config file is for when your stack is
+              something you want in git. Declare everything in{" "}
+              <code className="tok">sm2.yaml</code> or <code className="tok">sm2.toml</code>{" "}
+              (sm2 picks the parser by extension), then run{" "}
+              <code className="tok">sm2 config reload</code> — sm2 compares the file to
+              reality and closes the gap: starts what&apos;s new, stops what&apos;s gone,
+              restarts what changed, leaves the rest alone. Lookup order:{" "}
+              <code className="tok">--config</code> → <code className="tok">./sm2.toml</code> →{" "}
+              <code className="tok">./sm2.yaml</code> → <code className="tok">~/.sm2/</code>.
             </p>
             <Code>
 {`agent:
@@ -522,6 +690,8 @@ health:
           <section id="persistence" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Persistence &amp; boot</h2>
             <p>
+              A supervisor that forgets everything on reboot is just a fancy{" "}
+              <code className="tok">&amp;</code>. sm2 remembers.{" "}
               <code className="tok">save</code> writes the current process list to{" "}
               <code className="tok">~/.sm2/dump.json</code>; <code className="tok">resurrect</code>{" "}
               brings it back. <code className="tok">startup</code> generates a launchd agent (macOS)
@@ -544,13 +714,14 @@ health:
           <section id="notifications" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Notifications</h2>
             <p>
-              sm2 posts to Discord on every lifecycle event:{" "}
-              <code className="tok">started</code>, <code className="tok">stopped</code>,{" "}
-              <code className="tok">crashed</code>, and <code className="tok">restarted</code>{" "}
-              (with the restart count). Slack, Telegram and email are on the roadmap.
+              sm2 posts a Discord message the moment something happens to an app, to the
+              server&apos;s disk, or to the agent itself — so you find out from a ping, not
+              from an angry user. Slack, Telegram and email are on the roadmap.
             </p>
+
+            <h3>Setup</h3>
             <p>
-              Set it up two ways. <strong>Without a config file</strong>, use the{" "}
+              Two ways. <strong>Without a config file</strong>, use the{" "}
               <code className="tok">notify</code> command — it talks to the agent and persists
               to <code className="tok">~/.sm2/notify.json</code>, so it survives restarts:
             </p>
@@ -571,11 +742,109 @@ health:
     webhook: "https://discord.com/api/webhooks/…"`}
             </Code>
             <p>Whichever you set last wins.</p>
+
+            <h3>Every event, and exactly when it fires</h3>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>When it fires</th>
+                </tr>
+              </thead>
+              <tbody>
+                {EVENTS.map(([color, name, when]) => (
+                  <tr key={name}>
+                    <td>
+                      <span className={styles.chip} style={{ background: color }} />
+                      <code>{name}</code>
+                    </td>
+                    <td>{when}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p>
+              The distinction that matters on a bad day:{" "}
+              <code className="tok">restarted</code> means sm2 caught the exit and{" "}
+              <strong>recovery is already done</strong> — the message includes the attempt
+              number so a crash-loop is visible at a glance.{" "}
+              <code className="tok">crashed</code> means the app is <strong>down and staying
+              down</strong>: the restart policy said no (<code className="tok">never</code>, or{" "}
+              <code className="tok">on-failure</code> after a clean exit), the retry limit ran
+              out, or the relaunch itself failed. A red message is the one that needs a human.
+            </p>
+
+            <h3>Delivery you can trust</h3>
             <p>
               Messages are rich, color-coded embeds (app · event · host · details), and
               delivery is <strong>reliable</strong>: sm2 honors Discord&apos;s rate limit
               (<code className="tok">Retry-After</code> on 429) and retries transient failures
-              with backoff, so important events aren&apos;t silently dropped.
+              with capped backoff, so important events aren&apos;t silently dropped. Sending
+              happens on a background queue that never blocks supervision — a slow webhook
+              can&apos;t delay a restart.
+            </p>
+            <p>
+              On shutdown the agent plays fair too: it sends{" "}
+              <code className="tok">agent stopping</code> (with the number of apps it&apos;s
+              taking down), stops everything, then <strong>flushes the notification queue</strong>{" "}
+              before exiting — so the final &quot;stopped&quot; messages actually arrive instead
+              of dying with the process.
+            </p>
+          </section>
+
+          <section id="disk" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Disk-space alerts</h2>
+            <p>
+              A full disk is the classic silent failure: logs stop writing, databases stop
+              accepting, apps crash with confusing errors — and nothing tells you <em>why</em>{" "}
+              until you ssh in and run <code className="tok">df</code>. sm2 can watch free disk
+              space for you and warn you <strong>before</strong> the server runs out, through
+              the same Discord pipeline as every other event:
+            </p>
+            <Code copy="sm2 set disk.monitor on">
+              <span className={styles.prompt}>$ </span>sm2 set disk.monitor on{"      "}<span className={styles.cmt}># start watching (filesystem holding ~/.sm2)</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set disk.threshold 15{"    "}<span className={styles.cmt}># alert when free space drops below 15%</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set disk.path /var{"       "}<span className={styles.cmt}># watch a different filesystem (optional)</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set{"                      "}<span className={styles.cmt}># show current settings</span>{"\n"}
+              <span className={styles.prompt}>$ </span>sm2 set disk.monitor off{"     "}<span className={styles.cmt}># stop watching</span>
+            </Code>
+            <Table
+              head={["Key", "Meaning"]}
+              rows={[
+                ["disk.monitor on|off", "Master switch. Setting any other disk.* key turns it on."],
+                ["disk.threshold <percent>", "Free-space percentage that triggers the alert. Default: 10."],
+                ["disk.path <path>", "Any path on the filesystem to watch. Default: the one holding ~/.sm2 — usually the disk your logs grow on."],
+              ]}
+            />
+            <h3>How it behaves (designed not to spam you)</h3>
+            <p>
+              The agent samples the filesystem once a minute — a single{" "}
+              <code className="tok">statfs</code> syscall, so the monitor costs effectively
+              nothing. The alerting is stateful, not a naive threshold check:
+            </p>
+            <ul className={styles.list}>
+              <li>
+                <strong>One alert on crossing.</strong> When free space first drops below the
+                threshold you get <code className="tok">⚠ disk space low</code> with the real
+                numbers — e.g. <em>&quot;8.3% free (74GB of 926GB) on / — below 10%
+                threshold&quot;</em> — not an alert every minute for the same problem.
+              </li>
+              <li>
+                <strong>A reminder every 6 hours</strong> while the disk stays low, so one
+                missed message can&apos;t hide an ongoing problem.
+              </li>
+              <li>
+                <strong>Recovery with hysteresis.</strong>{" "}
+                <code className="tok">💾 disk space recovered</code> fires only once free space
+                climbs 2 points <em>above</em> the threshold. The margin stops the
+                low → recovered → low flapping you&apos;d get when a disk hovers exactly at the
+                line.
+              </li>
+            </ul>
+            <p>
+              Settings persist to <code className="tok">~/.sm2/disk.json</code> and are
+              re-applied when the agent starts — and the first check runs at startup, so a
+              disk that filled up while the agent was down alerts immediately.
             </p>
           </section>
 
@@ -584,8 +853,9 @@ health:
             <p>
               By default sm2 appends each app&apos;s output to{" "}
               <code className="tok">~/.sm2/logs/&lt;name&gt;.stdout.log</code> and{" "}
-              <code className="tok">.stderr.log</code>. Turn on rotation so those files
-              manage themselves instead of growing forever:
+              <code className="tok">.stderr.log</code> — forever. A chatty app will
+              eventually eat the disk (and then you&apos;ll meet the disk-space alert below).
+              Turn on rotation and the files manage themselves:
             </p>
             <Code copy="sm2 set logs.max_size 50M">
               <span className={styles.prompt}>$ </span>sm2 set logs.max_size 50M{"        "}<span className={styles.cmt}># rotate once a log passes 50 MB</span>{"\n"}
@@ -619,7 +889,8 @@ health:
           <section id="output" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Output &amp; color</h2>
             <p>
-              On a terminal, <code className="tok">status</code> prints a colored box —
+              sm2 is pretty exactly as long as a human is reading, and plain the moment a
+              script is. On a terminal, <code className="tok">status</code> prints a colored box —
               columns: <code className="tok">id · name · namespace · version · mode · pid · uptime ·
               ↺ · status · cpu · mem · user · watching</code> (RUNNING green, FAILED red,
               RESTARTING yellow, STOPPED dim). When piped it falls back to plain tab-separated

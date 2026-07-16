@@ -26,10 +26,13 @@ const GROUPS = [
     label: "config & boot",
     items: [
       ["config", "init · show · validate · reload"],
+      ["notify", "Discord alerts (test · status)"],
+      ["set", "logs.* rotation · disk.* alerts"],
       ["save", "snapshot the process list"],
       ["resurrect", "bring the snapshot back"],
       ["startup", "boot service (launchd/systemd)"],
       ["kill", "stop the agent"],
+      ["update", "self-update to the latest release"],
     ],
   },
 ];
@@ -49,7 +52,7 @@ export default function Commands() {
       <div className="container">
         <div className="section-head">
           <span className="eyebrow">the full set</span>
-          <h2>Twenty commands, one mental model.</h2>
+          <h2>Every command, one mental model.</h2>
           <p>
             Everything targets an app by name, <code className="tok">all</code>, or a{" "}
             <code className="tok">--namespace</code>. See the{" "}
