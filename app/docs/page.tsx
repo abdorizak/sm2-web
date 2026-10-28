@@ -186,7 +186,7 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
 }
 
 const INSTALL = "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash";
-const INSTALL_GO = "go install github.com/abdorizak/sm2/cmd/sm2@v0.1.0-dev.6";
+const INSTALL_GO = "go install github.com/abdorizak/sm2/cmd/sm2@v0.1.0-dev.7";
 
 export default function DocsPage() {
   return (
