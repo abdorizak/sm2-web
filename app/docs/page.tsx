@@ -37,7 +37,7 @@ const COMMANDS: [string, string][] = [
   ["reset <name|all>", "Zero the restart counter."],
   ["signal <sig> <name|all>", "Send a signal (HUP, USR1, TERM, …). Alias: sendSignal."],
   ["status", "Boxed status table. Aliases: ls, ps, list. Flags: --json, -a/--all (everything on the server, same as sys)."],
-  ["sys [name]", "Everything running on the server: systemd services, databases, containers, sm2 apps and unmanaged processes. Pass a name to describe one. Flags: --all, --json."],
+  ["sys [name]", "Everything running on the server, with CPU and memory per service: systemd services, databases, containers, sm2 apps and unmanaged processes. Pass a name to describe one. Flags: --all, --json."],
   ["describe <name>", "Every parameter of an app. Aliases: info, desc, show."],
   ["logs <name>", "Stream logs. Flags: -f/--follow, --stderr, -n/--lines."],
   ["flush [name]", "Empty log files for one app or all."],
@@ -90,18 +90,20 @@ const RUNTIMES: [string, string, string][] = [
   ["Docker", "sm2 start cache -- docker run --rm redis", "Run the container in the foreground (no -d) so sm2 owns its lifecycle."],
 ];
 
-// [group, what lands in it] — the sections sm2 sys prints, in order.
-const SYS_GROUPS: [string, string][] = [
-  ["DATABASES", "PostgreSQL, MySQL, MariaDB, MongoDB, ClickHouse, InfluxDB, etcd, …"],
-  ["CACHES · QUEUES · SEARCH", "Redis, Valkey, Memcached · RabbitMQ, Kafka, NATS · Elasticsearch, Meilisearch, …"],
-  ["WEB SERVERS", "nginx, Apache, Caddy, Traefik, HAProxy, PHP-FPM"],
-  ["MONITORING · MAIL · DNS · REMOTE ACCESS · SECURITY", "Prometheus, Grafana · Postfix, Dovecot · resolved, BIND · OpenSSH, Tailscale, WireGuard · fail2ban, CrowdSec"],
-  ["CONTAINER RUNTIMES · CONTAINERS", "Docker, containerd, k3s · every container, with published ports and health"],
-  ["SM2 APPS", "Your sm2-managed apps, with the ports they actually listen on."],
-  ["UNMANAGED ⚠", "Something listening on a port that nothing supervises, like a node server.js & left running in tmux. It won't come back if it dies."],
-  ["OTHER LISTENERS", "Ports whose owner isn't visible without root, unless sm2 can match them by well-known port."],
-  ["OTHER SERVICES", "Routine system units. Only with --all."],
-  ["FAILED", "Failed units, crashed or unhealthy containers, failed sm2 apps, with how long ago they failed. Always shown, always last."],
+// [TYPE value, what it covers] — rows of sm2 sys are ordered by type, with
+// failed services always last.
+const SYS_TYPES: [string, string][] = [
+  ["database", "PostgreSQL, MySQL, MariaDB, MongoDB, ClickHouse, InfluxDB, etcd, …"],
+  ["cache · queue · search", "Redis, Valkey, Memcached · RabbitMQ, Kafka, NATS · Elasticsearch, Meilisearch, …"],
+  ["web", "nginx, Apache, Caddy, Traefik, HAProxy, PHP-FPM"],
+  ["monitoring · mail · dns", "Prometheus, Grafana · Postfix, Dovecot · resolved, BIND, Unbound"],
+  ["remote · security", "OpenSSH, Tailscale, WireGuard · fail2ban, CrowdSec"],
+  ["runtime · container", "Docker, containerd, k3s · every container, with published ports and health"],
+  ["app", "Your sm2-managed apps, with the ports they actually listen on."],
+  ["process", "Something listening on a port that nothing supervises (MANAGED BY: none), like a node server.js & left running in tmux. It won't come back if it dies."],
+  ["port", "A port whose owner isn't visible without root, unless sm2 can match it by well-known port."],
+  ["service", "Any other systemd unit. Routine ones only appear with --all."],
+  ["FAILED (status)", "Failed units, crashed or unhealthy containers, failed sm2 apps, with how long ago they failed. Always shown, always last, below a separator."],
 ];
 
 // [embed color, event name, when it fires] — colors mirror the Discord embeds.
@@ -556,34 +558,32 @@ environment = { PORT = "3001" }`}
               you don&apos;t have to name anything. It finds systemd services, Docker containers,
               your sm2 apps and any other process listening on a port, then tells you what each
               one is: product, version, ports, memory and uptime. Log in to a box you&apos;ve never
-              seen and you&apos;ll know what&apos;s on it in one command.
+              seen and you&apos;ll know what&apos;s on it, and what&apos;s using the CPU and
+              memory, in one command. A line about the whole host (load, memory, disk) sits on top.
             </p>
             <Code copy="sm2 sys">
 {`$ sm2 sys
 web-01 · Ubuntu 24.04.1 LTS · up 12D
-
-DATABASES
-  postgresql@16-main   PostgreSQL 16.4          :5432      209.8MB   up 12D   systemd
-
-CACHES
-  redis-server         Redis 7.0.15             :6379      8.1MB     up 12D   systemd
-
-WEB SERVERS
-  nginx                nginx 1.24.0             :80 :443   11.7MB    up 3D    systemd
-
-CONTAINERS
-  metabase             metabase/metabase:v0.50  :3000      -         up 2D    docker
-
-SM2 APPS
-  api                  ./api                    :8080      21.5MB    up 5h    sm2
-
-UNMANAGED ⚠
-  node                 node server.js           :4000      87.9MB    up 9D    pid 4412
-
-FAILED
-  mysql                MySQL 8.0.39             -          -         failed 2h ago   systemd
-
-7 shown · 1 failed · 41 routine services hidden (sm2 sys --all)`}
+load 0.42 (4 cpus) · mem 2.9GB / 7.6GB (38%) · disk 41% used
+┌────────────────────┬───────────┬────────────────────────────────┬──────┬────────┬────────┬─────────┬────────┬─────────┬─────────────────┬────────────┐
+│ NAME               │ TYPE      │ SERVICE                        │  PID │ PORTS  │ UPTIME │ STATUS  │    CPU │     MEM │ USER            │ MANAGED BY │
+├────────────────────┼───────────┼────────────────────────────────┼──────┼────────┼────────┼─────────┼────────┼─────────┼─────────────────┼────────────┤
+│ postgresql@16-main │ database  │ PostgreSQL 16.4                │  812 │ 5432   │    12D │ RUNNING │  30.0% │ 209.8MB │ postgres        │ systemd    │
+│ redis-server       │ cache     │ Redis 7.0.15                   │  790 │ 6379   │    12D │ RUNNING │   0.0% │   8.1MB │ redis           │ systemd    │
+│ nginx              │ web       │ nginx 1.24.0                   │  901 │ 80,443 │     3D │ RUNNING │  10.0% │  11.7MB │ root            │ systemd    │
+│ systemd-resolved   │ dns       │ systemd-resolved 255.4         │  600 │ 53     │    12D │ RUNNING │   0.0% │   8.6MB │ systemd-resolve │ systemd    │
+│ ssh                │ remote    │ OpenSSH                        │  700 │ 22     │    12D │ RUNNING │   0.0% │   5.7MB │ root            │ systemd    │
+│ docker             │ runtime   │ Docker Engine 24.0.7           │  655 │ -      │    12D │ RUNNING │   0.0% │  94.4MB │ root            │ systemd    │
+│ metabase           │ container │ metabase/metabase:v0.50.1      │    - │ 3000   │     2D │ RUNNING │  50.0% │ 625.0MB │ -               │ docker     │
+│ api                │ app       │ ./api                          │ 3000 │ 8080   │     5h │ RUNNING │   4.0% │  21.5MB │ xman            │ sm2        │
+│ node               │ process   │ node server.js                 │ 4412 │ 4000   │     9D │ RUNNING │ 100.0% │  87.9MB │ xman            │ none       │
+│ :9000              │ port      │ owner not visible (run with s… │    - │ 9000   │      - │ LISTEN  │      - │       - │ -               │ ?          │
+│ myworker           │ service   │ user service                   │ 5000 │ 9999   │     1h │ RUNNING │   0.0% │  14.6MB │ xman            │ systemd    │
+├────────────────────┼───────────┼────────────────────────────────┼──────┼────────┼────────┼─────────┼────────┼─────────┼─────────────────┼────────────┤
+│ mysql              │ database  │ MySQL 8.0.39                   │    - │ -      │ 2h ago │ FAILED  │      - │       - │ -               │ systemd    │
+│ old-job            │ container │ jobs:latest                    │    - │ -      │ 3h ago │ FAILED  │      - │       - │ -               │ docker     │
+└────────────────────┴───────────┴────────────────────────────────┴──────┴────────┴────────┴─────────┴────────┴─────────┴─────────────────┴────────────┘
+13 shown · 2 failed · 4 routine services hidden (sm2 sys --all)`}
             </Code>
             <Shell
               lines={[
@@ -600,7 +600,7 @@ FAILED
                 "sudo sm2 sys",
               ]}
             />
-            <Table head={["Group", "What lands in it"]} rows={SYS_GROUPS} />
+            <Table head={["Type", "What it covers"]} rows={SYS_TYPES} />
             <h3>How sm2 knows what each thing is</h3>
             <ul className={styles.list}>
               <li>
@@ -622,8 +622,18 @@ FAILED
                 <code className="tok">pg_ctlcluster</code> wrapper systemd launches.
               </li>
               <li>
+                <strong>Real CPU, right now.</strong> On Linux, <code className="tok">ps</code>&apos;s
+                %cpu is an average over the process&apos;s whole lifetime, so a busy Postgres that
+                has been up for weeks would read near zero. Instead, sm2 samples{" "}
+                <code className="tok">/proc</code> twice, half a second apart, and adds up every
+                process in the service&apos;s cgroup: all Postgres backends, all nginx workers,
+                everything inside a container. It&apos;s shown as % of one core, like{" "}
+                <code className="tok">top</code>, so a busy multi-threaded service can read over 100%.
+              </li>
+              <li>
                 <strong>Real memory.</strong> On systemd it uses the unit&apos;s cgroup accounting, so
-                Postgres counts every backend. Otherwise sm2 sums the whole process group.
+                Postgres counts every backend. Containers count their cgroup. Otherwise sm2 sums the
+                whole process group.
               </li>
               <li>
                 <strong>Quiet by default.</strong> A typical server runs dozens of routine units.
