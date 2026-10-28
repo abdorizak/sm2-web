@@ -16,6 +16,7 @@ const GROUPS = [
     label: "inspect",
     items: [
       ["status", "boxed table (ls / ps)"],
+      ["sys", "everything running on the server"],
       ["describe", "every parameter of an app"],
       ["logs", "tail stdout/stderr (-f)"],
       ["flush", "empty log files"],

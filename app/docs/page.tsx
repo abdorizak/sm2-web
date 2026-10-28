@@ -8,7 +8,7 @@ import styles from "./docs.module.css";
 export const metadata: Metadata = {
   title: "sm2 docs — command & config reference",
   description:
-    "Reference for the sm2 CLI: every command, start flag, the sm2.yaml schema, restart triggers, reboot survival, notifications, and output options.",
+    "Reference for the sm2 CLI: every command, start flag, server discovery, the sm2.yaml schema, restart triggers, reboot survival, notifications, and output options.",
 };
 
 const NAV: [string, string][] = [
@@ -16,6 +16,7 @@ const NAV: [string, string][] = [
   ["quickstart", "Quick start"],
   ["languages", "Languages & runtimes"],
   ["examples", "Examples"],
+  ["sys", "Server discovery"],
   ["commands", "Commands"],
   ["flags", "Start flags"],
   ["config", "Configuration"],
@@ -35,7 +36,8 @@ const COMMANDS: [string, string][] = [
   ["delete <name|all>", "Stop and remove from the list. Aliases: del, rm."],
   ["reset <name|all>", "Zero the restart counter."],
   ["signal <sig> <name|all>", "Send a signal (HUP, USR1, TERM, …). Alias: sendSignal."],
-  ["status", "Boxed status table. Aliases: ls, ps, list. Flag: --json."],
+  ["status", "Boxed status table. Aliases: ls, ps, list. Flags: --json, -a/--all (everything on the server, same as sys)."],
+  ["sys [name]", "Everything running on the server: systemd services, databases, containers, sm2 apps and unmanaged processes. Pass a name to describe one. Flags: --all, --json."],
   ["describe <name>", "Every parameter of an app. Aliases: info, desc, show."],
   ["logs <name>", "Stream logs. Flags: -f/--follow, --stderr, -n/--lines."],
   ["flush [name]", "Empty log files for one app or all."],
@@ -86,6 +88,20 @@ const RUNTIMES: [string, string, string][] = [
   [".NET", "sm2 start app -- dotnet App.dll", "Publish first; dotnet run is the dev loop."],
   ["Shell / anything", "sm2 start backup -- ./backup.sh", "Any executable file. For pipes or &&, use --cmd \"…\"."],
   ["Docker", "sm2 start cache -- docker run --rm redis", "Run the container in the foreground (no -d) so sm2 owns its lifecycle."],
+];
+
+// [group, what lands in it] — the sections sm2 sys prints, in order.
+const SYS_GROUPS: [string, string][] = [
+  ["DATABASES", "PostgreSQL, MySQL, MariaDB, MongoDB, ClickHouse, InfluxDB, etcd, …"],
+  ["CACHES · QUEUES · SEARCH", "Redis, Valkey, Memcached · RabbitMQ, Kafka, NATS · Elasticsearch, Meilisearch, …"],
+  ["WEB SERVERS", "nginx, Apache, Caddy, Traefik, HAProxy, PHP-FPM"],
+  ["MONITORING · MAIL · DNS · REMOTE ACCESS · SECURITY", "Prometheus, Grafana · Postfix, Dovecot · resolved, BIND · OpenSSH, Tailscale, WireGuard · fail2ban, CrowdSec"],
+  ["CONTAINER RUNTIMES · CONTAINERS", "Docker, containerd, k3s · every container, with published ports and health"],
+  ["SM2 APPS", "Your sm2-managed apps, with the ports they actually listen on."],
+  ["UNMANAGED ⚠", "Something listening on a port that nothing supervises, like a node server.js & left running in tmux. It won't come back if it dies."],
+  ["OTHER LISTENERS", "Ports whose owner isn't visible without root, unless sm2 can match them by well-known port."],
+  ["OTHER SERVICES", "Routine system units. Only with --all."],
+  ["FAILED", "Failed units, crashed or unhealthy containers, failed sm2 apps, with how long ago they failed. Always shown, always last."],
 ];
 
 // [embed color, event name, when it fires] — colors mirror the Discord embeds.
@@ -530,6 +546,109 @@ environment = { PORT = "3001" }`}
                 "# (use sudo if sm2 lives in a root-owned dir like /usr/local/bin)",
               ]}
             />
+          </section>
+
+          <section id="sys" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Server discovery</h2>
+            <p>
+              <code className="tok">sm2 status</code> shows the apps sm2 runs.{" "}
+              <code className="tok">sm2 sys</code> shows <em>everything</em> on the server, and
+              you don&apos;t have to name anything. It finds systemd services, Docker containers,
+              your sm2 apps and any other process listening on a port, then tells you what each
+              one is: product, version, ports, memory and uptime. Log in to a box you&apos;ve never
+              seen and you&apos;ll know what&apos;s on it in one command.
+            </p>
+            <Code copy="sm2 sys">
+{`$ sm2 sys
+web-01 · Ubuntu 24.04.1 LTS · up 12D
+
+DATABASES
+  postgresql@16-main   PostgreSQL 16.4          :5432      209.8MB   up 12D   systemd
+
+CACHES
+  redis-server         Redis 7.0.15             :6379      8.1MB     up 12D   systemd
+
+WEB SERVERS
+  nginx                nginx 1.24.0             :80 :443   11.7MB    up 3D    systemd
+
+CONTAINERS
+  metabase             metabase/metabase:v0.50  :3000      -         up 2D    docker
+
+SM2 APPS
+  api                  ./api                    :8080      21.5MB    up 5h    sm2
+
+UNMANAGED ⚠
+  node                 node server.js           :4000      87.9MB    up 9D    pid 4412
+
+FAILED
+  mysql                MySQL 8.0.39             -          -         failed 2h ago   systemd
+
+7 shown · 1 failed · 41 routine services hidden (sm2 sys --all)`}
+            </Code>
+            <Shell
+              lines={[
+                "sm2 sys",
+                "# the same view, from the status command you already know",
+                "sm2 ls -a",
+                "# include routine system units (journald, cron, …)",
+                "sm2 sys --all",
+                "# describe one: package, unit file, listen addresses, recent logs",
+                "sm2 sys postgres",
+                "# machine-readable, for scripts",
+                "sm2 sys --json",
+                "# full detail, including other users' ports and logs",
+                "sudo sm2 sys",
+              ]}
+            />
+            <Table head={["Group", "What lands in it"]} rows={SYS_GROUPS} />
+            <h3>How sm2 knows what each thing is</h3>
+            <ul className={styles.list}>
+              <li>
+                <strong>It looks everywhere.</strong> systemd units, Docker containers, listening
+                sockets (<code className="tok">ss</code> on Linux, <code className="tok">lsof</code> on
+                macOS) and the process table, so a database started by hand shows up as clearly as
+                one started by systemd.
+              </li>
+              <li>
+                <strong>It attributes every port.</strong> Each listening socket is traced back to
+                its owner through cgroups, process groups and parents. nginx&apos;s master and
+                workers collapse into one row, and a container&apos;s published port shows on the
+                container, not on <code className="tok">docker-proxy</code>.
+              </li>
+              <li>
+                <strong>Real versions.</strong> sm2 reads them from the package manager (dpkg, rpm, or
+                the Homebrew Cellar on macOS), from the actual server binary. That&apos;s why it
+                reports PostgreSQL 16.4, not the version of the{" "}
+                <code className="tok">pg_ctlcluster</code> wrapper systemd launches.
+              </li>
+              <li>
+                <strong>Real memory.</strong> On systemd it uses the unit&apos;s cgroup accounting, so
+                Postgres counts every backend. Otherwise sm2 sums the whole process group.
+              </li>
+              <li>
+                <strong>Quiet by default.</strong> A typical server runs dozens of routine units.
+                sm2 shows what matters: recognized software, anything listening on a port, and
+                anything failed. Debian&apos;s empty <code className="tok">postgresql.service</code>{" "}
+                wrapper is hidden, and the real <code className="tok">postgresql@16-main</code>{" "}
+                cluster is shown. <code className="tok">--all</code> shows the rest.
+              </li>
+            </ul>
+            <h3>Root, or not</h3>
+            <p>
+              <code className="tok">sm2 sys</code> works as a normal user. You see every systemd
+              service, and ports owned by other users (postgres, redis, root) are still matched
+              to their service by well-known port number. <code className="tok">sudo sm2 sys</code>{" "}
+              adds exact port ownership and lets <code className="tok">sm2 sys &lt;name&gt;</code>{" "}
+              show recent journal logs. Under sudo, sm2 still finds <em>your</em> agent, so your
+              apps stay labeled as sm2 apps. It&apos;s read-only either way: it never starts the
+              agent or changes anything.
+            </p>
+            <p>
+              The full view relies on systemd, so it is most complete on Linux servers. On macOS,
+              sm2 lists listening processes, containers and sm2 apps (with Homebrew versions), and
+              labels the section <em>listening processes</em> rather than unmanaged, since launchd
+              may be supervising them.
+            </p>
           </section>
 
           <section id="commands" className={styles.section}>

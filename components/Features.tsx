@@ -12,9 +12,9 @@ const FEATURES = [
     body: "Pick a policy — always, on-failure, or never — and a retry limit. When a process exits unexpectedly, sm2 restarts it and counts the attempts.",
   },
   {
-    tag: "sm2 status",
+    tag: "sm2 status · sm2 sys",
     title: "Shows what's live",
-    body: "Per-process state, CPU, memory, uptime, and restart count in one table. No guessing which services are up.",
+    body: "State, CPU, memory, uptime, and restarts for every app. Then sm2 sys shows the whole server, and you don't name anything: databases, web servers, containers, and stray processes, each with its version and ports.",
   },
   {
     tag: "sm2 config reload",
