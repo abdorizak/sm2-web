@@ -287,7 +287,7 @@ function RefTable({ head, rows }: { head: string[]; rows: string[][] }) {
 }
 
 const INSTALL = "curl -fsSL https://raw.githubusercontent.com/abdorizak/sm2/main/install.sh | bash";
-const INSTALL_GO = "go install github.com/abdorizak/sm2/cmd/sm2@v0.1.0-dev.8";
+const INSTALL_GO = "go install github.com/abdorizak/sm2/cmd/sm2@v0.1.0-dev.9";
 
 export default function DocsPage() {
   return (
