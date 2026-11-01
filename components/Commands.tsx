@@ -27,6 +27,7 @@ const GROUPS = [
     label: "config & boot",
     items: [
       ["config", "init · show · validate · reload"],
+      ["import", "convert a pm2 ecosystem.config.js"],
       ["notify", "Discord alerts (test · status)"],
       ["set", "logs.* rotation · disk.* alerts"],
       ["save", "snapshot the process list"],
@@ -45,6 +46,8 @@ const TRIGGERS = [
   ["--cron-restart", "restart on a schedule"],
   ["--instances", "run N copies"],
   ["--kill-timeout", "grace before SIGKILL"],
+  ["--health", "restart when a probe keeps failing"],
+  ["--env-file", "load a .env from anywhere"],
 ];
 
 export default function Commands() {

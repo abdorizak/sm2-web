@@ -8,7 +8,7 @@ import styles from "./docs.module.css";
 export const metadata: Metadata = {
   title: "sm2 docs — command & config reference",
   description:
-    "Reference for the sm2 CLI: every command, start flag, server discovery, the sm2.yaml schema, restart triggers, reboot survival, notifications, and output options.",
+    "Reference for the sm2 CLI: every command and start flag, migrating from pm2, the full sm2.yaml reference, env files, health checks, server discovery, restart triggers, reboot survival, notifications, and output options.",
 };
 
 const NAV: [string, string][] = [
@@ -16,13 +16,17 @@ const NAV: [string, string][] = [
   ["quickstart", "Quick start"],
   ["languages", "Languages & runtimes"],
   ["examples", "Examples"],
+  ["pm2", "Migrating from pm2"],
   ["sys", "Server discovery"],
   ["commands", "Commands"],
   ["flags", "Start flags"],
   ["config", "Configuration"],
-  ["env", "Environment & reload"],
+  ["config-reference", "Config reference"],
+  ["env", "Environment & env files"],
+  ["health", "Health checks"],
   ["triggers", "Restart triggers"],
   ["persistence", "Persistence & boot"],
+  ["files", "Files & variables"],
   ["notifications", "Notifications"],
   ["disk", "Disk-space alerts"],
   ["logrotate", "Log rotation"],
@@ -42,6 +46,7 @@ const COMMANDS: [string, string][] = [
   ["logs <name>", "Stream logs. Flags: -f/--follow, --stderr, -n/--lines."],
   ["flush [name]", "Empty log files for one app or all."],
   ["config <sub>", "init · show · validate · reload (see Configuration)."],
+  ["import <file>", "Convert a pm2 ecosystem file (.js, .cjs, .mjs, .json, .yml) into sm2.yaml. Flags: --env <name>, -o <path|->, --force."],
   ["notify <sub>", "discord · test · status — set up notifications without a config file."],
   ["set <key> <value>", "Runtime settings: logs.* (log rotation) and disk.* (disk-space alerts). Run bare sm2 set to show current values."],
   ["save", "Snapshot the process list to ~/.sm2/dump.json. Alias: dump."],
@@ -58,9 +63,11 @@ const FLAGS: [string, string][] = [
   ["-- <command…>", "The command to run, passed after --. e.g. -- npm run start"],
   ["--cmd <shell>", "Optional: a shell one-liner instead of -- (for pipes / &&)."],
   ["--dir, --cwd <path>", "Working directory (default: where you ran sm2)."],
-  ["-e, --env KEY=VALUE", "Environment variable (repeatable)."],
+  ["-e, --env KEY=VALUE", "Environment variable (repeatable). Wins over --env-file."],
+  ["--env-file <path>", "Load variables from a .env file (repeatable, later wins). Re-read on every restart."],
   ["--restart <policy>", "always | on-failure | never. Default: on-failure."],
   ["--max-retries <n>", "Cap auto-restarts (0 = unlimited). Alias: --max-restarts."],
+  ["--min-uptime <dur>", "With --max-retries: only runs shorter than this count as failures (pm2's min_uptime)."],
   ["-i, --instances <n>", "Launch N copies as <name>-0 … <name>-(N-1)."],
   ["--namespace <ns>", "Group the app for bulk targeting."],
   ["--no-autorestart", "Never restart automatically (= --restart never)."],
@@ -72,6 +79,10 @@ const FLAGS: [string, string][] = [
   ["--watch", "Restart when files change."],
   ["--ignore-watch <frag>", "Path fragment to ignore while watching (repeatable)."],
   ["--cron-restart <expr>", "Restart on a 5-field cron schedule."],
+  ["--health <check>", "Health check: http(s)://URL, tcp://host:port, or a shell command."],
+  ["--health-interval <dur>", "Time between checks. Default: 30s."],
+  ["--health-timeout <dur>", "Time one check may take. Default: 5s."],
+  ["--health-retries <n>", "Consecutive failures before a restart. Default: 3."],
 ];
 
 // [runtime, start line, note] — every entry is a plain terminal command; sm2
@@ -88,6 +99,71 @@ const RUNTIMES: [string, string, string][] = [
   [".NET", "sm2 start app -- dotnet App.dll", "Publish first; dotnet run is the dev loop."],
   ["Shell / anything", "sm2 start backup -- ./backup.sh", "Any executable file. For pipes or &&, use --cmd \"…\"."],
   ["Docker", "sm2 start cache -- docker run --rm redis", "Run the container in the foreground (no -d) so sm2 owns its lifecycle."],
+];
+
+// [key, default, CLI flag, meaning]: every key an app accepts in sm2.yaml.
+const APP_KEYS: string[][] = [
+  ["command", "required", "-- <cmd> · --cmd", "The command line to run (through sh -c, so pipes and && work)."],
+  ["directory", "the config file's folder", "--dir", "Working directory. Relative paths are relative to the config file."],
+  ["namespace", "default", "--namespace", "A group you can stop/restart together: sm2 restart --namespace web."],
+  ["instances", "1", "-i", "Run N copies as <name>-0 … <name>-(N-1). Each gets NODE_APP_INSTANCE and SM2_INSTANCE = 0, 1, …"],
+  ["instance_var", "—", "—", "An extra variable that also receives the instance index (pm2's instance_var)."],
+  ["restart.policy", "on-failure", "--restart", "always (any exit) · on-failure (non-zero exit) · never."],
+  ["restart.max_retries", "0 = unlimited", "--max-retries", "Stop restarting after this many restarts."],
+  ["restart.min_uptime", "—", "--min-uptime", "If set, only runs shorter than this count toward max_retries (crash-loop protection, like pm2)."],
+  ["restart_delay", "1s", "--restart-delay", "Fixed wait before each restart."],
+  ["exp_backoff_restart_delay", "—", "--exp-backoff-restart-delay", "Exponential backoff starting at this delay, doubling up to 30s."],
+  ["kill_timeout", "5s", "--kill-timeout", "Grace period between SIGTERM and SIGKILL when stopping."],
+  ["environment", "—", "-e KEY=VALUE", "Variables for the app. They win over everything else."],
+  ["env_file", "—", "--env-file", "A .env file, or a list. Re-read on every start and restart."],
+  ["filter_env", "—", "—", "Drop variables inherited from the server: true for all, or a list of name prefixes."],
+  ["max_memory_restart", "—", "--max-memory-restart", "Restart when memory (RSS) passes this size: 150M, 1G."],
+  ["watch", "false", "--watch", "Restart when a file changes."],
+  ["watch_paths", "directory", "—", "What to watch (a list, relative to the config file)."],
+  ["ignore_watch", "—", "--ignore-watch", "Path fragments to skip. .git, node_modules, __pycache__ are always skipped."],
+  ["cron_restart", "—", "--cron-restart", "Restart on a 5-field cron schedule, e.g. \"0 3 * * *\"."],
+  ["health_check.http · .tcp · .command", "—", "--health", "One probe: a URL (healthy below HTTP 400), host:port (accepts a connection), or a command (exit 0)."],
+  ["health_check.interval · .timeout · .retries", "30s · 5s · 3", "--health-interval · --health-timeout · --health-retries", "Override the health: defaults for this app."],
+  ["no_autostart", "false", "--no-autostart", "Register the app but don't start it."],
+];
+
+// [key, meaning]: top-level sections of sm2.yaml.
+const TOP_KEYS: [string, string][] = [
+  ["apps.<name>", "One entry per app; the key is the app's name. See the app keys below."],
+  ["agent.name · agent.environment", "Labels for this server (informational)."],
+  ["notifications.discord.enabled · .webhook", "Discord alerts (see Notifications). sm2 notify sets the same thing without a file."],
+  ["health.interval · .timeout · .retries", "Defaults for every app's health_check (30s · 5s · 3)."],
+  ["health.enabled", "Set to false to switch every health check off without deleting them."],
+  ["logs.rotate · .max_size · .retain · .compress · .interval", "Log rotation (see Log rotation). sm2 set logs.* sets the same at runtime."],
+];
+
+// [pm2 attribute, sm2.yaml equivalent]: what sm2 import converts.
+const PM2_MAP: [string, string][] = [
+  ["name", "the key under apps: (made path-safe: \"billing worker\" → billing-worker)"],
+  ["script + args + interpreter + interpreter_args / node_args", "command: node --max-old-space-size=512 ./dist/server.js. The interpreter is picked by extension like pm2 (.js → node, .py → python3, .sh → bash, …)."],
+  ["cwd", "directory (relative to the new sm2.yaml)"],
+  ["env + env_<name>", "environment, with sm2 import --env <name> merging env_<name> on top"],
+  ["instances (number, max, -1)", "instances (\"max\" is resolved to this machine's CPU count, with a note)"],
+  ["autorestart", "restart.policy: always (pm2 restarts even after a clean exit), or never"],
+  ["max_restarts + min_uptime", "restart.max_retries + restart.min_uptime (same rule: only quick consecutive crashes count; pm2's default min_uptime is 1s)"],
+  ["kill_timeout · restart_delay · exp_backoff_restart_delay (ms)", "the same keys as durations: 5000 → 5s"],
+  ["max_memory_restart", "max_memory_restart"],
+  ["watch (true or paths) · ignore_watch", "watch · watch_paths · ignore_watch"],
+  ["cron_restart", "cron_restart (a leading seconds field of 0 is dropped)"],
+  ["namespace", "namespace"],
+  ["autostart: false", "no_autostart: true"],
+  ["instance_var · filter_env · append_env_to_name", "instance_var · filter_env · the name gets -<env> with --env"],
+];
+
+// [pm2 attribute, why it isn't converted]
+const PM2_SKIPPED: [string, string][] = [
+  ["exec_mode: cluster", "sm2 runs each instance as its own process, so instances can't share one port. Give each its own port (NODE_APP_INSTANCE is 0, 1, …), put a load balancer in front, or use instances: 1."],
+  ["out_file · error_file · log_file · pid_file · merge_logs", "Logs always go to ~/.sm2/logs/<name>.stdout.log and .stderr.log (rotate them with sm2 set logs.*)."],
+  ["time · log_date_format", "Log timestamps aren't supported yet."],
+  ["wait_ready · listen_timeout · shutdown_with_message", "sm2 doesn't wait for a ready message; it stops apps with SIGTERM, then SIGKILL after kill_timeout. Use a health_check to catch an app that isn't serving."],
+  ["user · uid · gid", "Apps run as the user running the sm2 agent."],
+  ["deploy", "sm2 has no deploy command; keep your current deploy step."],
+  ["source_map_support · vizion · post_update · force · …", "Not applicable to sm2."],
 ];
 
 // [TYPE value, what it covers] — rows of sm2 sys are ordered by type, with
@@ -109,7 +185,7 @@ const SYS_TYPES: [string, string][] = [
 // [embed color, event name, when it fires] — colors mirror the Discord embeds.
 const EVENTS: [string, string, string][] = [
   ["#57F287", "started", "An app launched — via start, resurrect, or config reload."],
-  ["#FEE75C", "restarted", "sm2 brought an app back: auto-restart after an exit (with the attempt count), a manual restart, or a memory / watch / cron trigger (the reason is in the message)."],
+  ["#FEE75C", "restarted", "sm2 brought an app back: auto-restart after an exit (with the attempt count), a manual restart, or a memory / watch / cron / failed health check trigger (the reason is in the message)."],
   ["#99AAB5", "stopped", "An app was stopped deliberately and exited cleanly."],
   ["#ED4245", "crashed", "An app is down and sm2 will not restart it: the policy forbids it, the retry limit is exhausted, or the relaunch itself failed."],
   ["#5865F2", "log rotated", "A log file crossed its size limit and was rotated (see Log rotation)."],
@@ -180,6 +256,29 @@ function Table({ head, rows }: { head: [string, string]; rows: [string, string][
               <code>{a}</code>
             </td>
             <td>{b}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function RefTable({ head, rows }: { head: string[]; rows: string[][] }) {
+  return (
+    <table className={styles.table}>
+      <thead>
+        <tr>
+          {head.map((h) => (
+            <th key={h}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r[0]}>
+            {r.map((c, i) => (
+              <td key={i}>{i === 0 || i === 2 ? <code>{c}</code> : c}</td>
+            ))}
           </tr>
         ))}
       </tbody>
@@ -550,6 +649,113 @@ environment = { PORT = "3001" }`}
             />
           </section>
 
+          <section id="pm2" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Migrating from pm2</h2>
+            <p>
+              Already running apps with pm2 and an <code className="tok">ecosystem.config.js</code>?
+              You don&apos;t have to rewrite it. <code className="tok">sm2 import</code> reads it the
+              way pm2 does (it&apos;s JavaScript, so Node evaluates it once) and writes an{" "}
+              <code className="tok">sm2.yaml</code> next to it. Everything that has an sm2
+              equivalent is converted. Anything that doesn&apos;t is listed as a note and written as
+              a comment above the app it concerns, so nothing is silently dropped.
+            </p>
+            <Shell
+              lines={[
+                "sm2 import ecosystem.config.js --env production",
+                "# also: .cjs, .mjs, .json, .yml · -o - prints instead of writing",
+                "sm2 config validate -c sm2.yaml",
+              ]}
+            />
+            <p>For example, this pm2 file:</p>
+            <Code>
+{`module.exports = {
+  apps: [{
+    name: "arbitration-api",
+    script: "./dist/server.js",
+    cwd: "./api",
+    instances: 2,
+    max_restarts: 10,
+    max_memory_restart: "300M",
+    kill_timeout: 5000,
+    out_file: "/var/log/api.out.log",
+    env: { NODE_ENV: "development", PORT: 3000 },
+    env_production: { NODE_ENV: "production" },
+  }],
+};`}
+            </Code>
+            <p>becomes this sm2.yaml:</p>
+            <Code>
+{`# Converted from ecosystem.config.js by \`sm2 import\`.
+# Environment: env + env_production (like \`pm2 start --env production\`).
+apps:
+  # pm2: cluster mode: sm2 runs each instance as its own process, so they can't share one port. …
+  # pm2: out_file ignored: logs go to ~/.sm2/logs/<name>.stdout.log / .stderr.log
+  arbitration-api:
+    command: node ./dist/server.js
+    directory: api
+    instances: 2
+    restart:
+      policy: always
+      max_retries: 10
+      min_uptime: 1s
+    kill_timeout: 5s
+    max_memory_restart: 300M
+    environment:
+      NODE_ENV: production
+      PORT: "3000"`}
+            </Code>
+            <h3>Switching a server over</h3>
+            <p>
+              Stop the pm2 copies before starting the sm2 ones, otherwise both try to bind the
+              same ports:
+            </p>
+            <Shell
+              lines={[
+                "sm2 import ecosystem.config.js --env production",
+                "sm2 config validate -c sm2.yaml",
+                "pm2 delete ecosystem.config.js",
+                "sm2 config reload -c sm2.yaml",
+                "sm2 status",
+                "# survive reboots, and stop pm2 from coming back at boot",
+                "sm2 save && sm2 startup",
+                "pm2 unstartup",
+              ]}
+            />
+            <h3>What converts</h3>
+            <Table head={["pm2", "sm2.yaml"]} rows={PM2_MAP} />
+            <h3>What doesn&apos;t, and what to do instead</h3>
+            <Table head={["pm2", "Why / what to do"]} rows={PM2_SKIPPED} />
+            <h3>Behavior differences worth knowing</h3>
+            <ul className={styles.list}>
+              <li>
+                <strong>Default restart policy.</strong> pm2 restarts an app after <em>any</em> exit,
+                even a clean <code className="tok">exit 0</code>. sm2&apos;s default is{" "}
+                <code className="tok">on-failure</code>, treating exit 0 as &quot;done&quot;.{" "}
+                <code className="tok">sm2 import</code> writes <code className="tok">policy: always</code>{" "}
+                so imported apps behave as they did under pm2.
+              </li>
+              <li>
+                <strong>Instances are separate processes.</strong> There&apos;s no cluster mode, so
+                code that relies on <code className="tok">NODE_APP_INSTANCE</code> keeps working
+                (sm2 sets it), but instances can&apos;t share a port.
+              </li>
+              <li>
+                <strong>Logs live in one place:</strong>{" "}
+                <code className="tok">~/.sm2/logs/&lt;name&gt;.stdout.log</code> and{" "}
+                <code className="tok">.stderr.log</code>. Use <code className="tok">sm2 logs &lt;name&gt; -f</code>.
+              </li>
+              <li>
+                <strong>Commands map one to one:</strong> <code className="tok">pm2 ls</code> →{" "}
+                <code className="tok">sm2 ls</code>, <code className="tok">pm2 logs</code> →{" "}
+                <code className="tok">sm2 logs</code>, <code className="tok">pm2 restart</code> →{" "}
+                <code className="tok">sm2 restart</code>, <code className="tok">pm2 save</code> →{" "}
+                <code className="tok">sm2 save</code>, <code className="tok">pm2 startup</code> →{" "}
+                <code className="tok">sm2 startup</code>, <code className="tok">pm2 describe</code> →{" "}
+                <code className="tok">sm2 describe</code>.
+              </li>
+            </ul>
+          </section>
+
           <section id="sys" className={styles.section}>
             <h2><span className={styles.hash}>#</span>Server discovery</h2>
             <p>
@@ -703,7 +909,13 @@ load 0.42 (4 cpus) · mem 2.9GB / 7.6GB (38%) · disk 41% used
               reality and closes the gap: starts what&apos;s new, stops what&apos;s gone,
               restarts what changed, leaves the rest alone. Lookup order:{" "}
               <code className="tok">--config</code> → <code className="tok">./sm2.toml</code> →{" "}
-              <code className="tok">./sm2.yaml</code> → <code className="tok">~/.sm2/</code>.
+              <code className="tok">./sm2.yaml</code> → <code className="tok">~/.sm2/</code>. Relative
+              paths in the file (<code className="tok">directory</code>,{" "}
+              <code className="tok">env_file</code>, <code className="tok">watch_paths</code>) are
+              resolved from the file&apos;s own folder, and an app without a{" "}
+              <code className="tok">directory</code> runs there too. Unknown keys are errors, so a
+              typo can&apos;t be silently ignored. Every key is listed in the{" "}
+              <a href="#config-reference">config reference</a>.
             </p>
             <Code>
 {`agent:
@@ -712,29 +924,35 @@ load 0.42 (4 cpus) · mem 2.9GB / 7.6GB (38%) · disk 41% used
 apps:
   api:
     command: "./api"
-    directory: "/srv/api"
+    directory: /srv/api
     namespace: web
     instances: 2
     restart:
       policy: always
       max_retries: 5
+      min_uptime: 10s
     kill_timeout: 10s
     restart_delay: 500ms
     max_memory_restart: 300M
-    watch: true
-    ignore_watch: ["tmp", "logs"]
-    cron_restart: "0 3 * * *"
+    env_file: /etc/api/.env
     environment:
       PORT: "8080"
+    health_check:
+      http: http://127.0.0.1:8080/health
+    cron_restart: "0 3 * * *"
+
+  worker:
+    command: python3 worker.py      # no directory: runs where this file is
 
 notifications:
   discord:
     enabled: true
     webhook: "https://discord.com/api/webhooks/…"
 
-health:
-  enabled: true
-  interval: 30s`}
+health:            # defaults for every health_check
+  interval: 30s
+  timeout: 5s
+  retries: 3`}
             </Code>
             <Code copy="sm2 config validate">
               <span className={styles.prompt}>$ </span>sm2 config init{"      "}<span className={styles.cmt}># write a starter file</span>{"\n"}
@@ -743,21 +961,97 @@ health:
             </Code>
           </section>
 
-          <section id="env" className={styles.section}>
-            <h2><span className={styles.hash}>#</span>Environment &amp; reload</h2>
+          <section id="config-reference" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Config reference</h2>
             <p>
-              Every app runs with an environment built from two layers: a{" "}
-              <strong>base</strong> it inherits, plus the{" "}
-              <strong>overrides</strong> you set per app (the{" "}
-              <code className="tok">environment</code> block in config, or{" "}
-              <code className="tok">-e KEY=VALUE</code> on <code className="tok">sm2 start</code>).
-              Overrides always win.
+              Every key sm2 accepts. Durations read naturally (<code className="tok">500ms</code>,{" "}
+              <code className="tok">10s</code>, <code className="tok">5m</code>), sizes take{" "}
+              <code className="tok">K</code>/<code className="tok">M</code>/<code className="tok">G</code>,
+              and most app keys have a matching <code className="tok">sm2 start</code> flag.
+            </p>
+            <h3>Top level</h3>
+            <Table head={["Key", "Meaning"]} rows={TOP_KEYS} />
+            <h3>Per app (under apps.&lt;name&gt;)</h3>
+            <RefTable head={["Key", "Default", "Flag", "Meaning"]} rows={APP_KEYS} />
+            <h3>The same in TOML</h3>
+            <p>
+              Name the file <code className="tok">sm2.toml</code> and sm2 uses the TOML parser.
+              The keys are identical:
             </p>
             <Code>
-{`final env  =  base (inherited)  +  per-app overrides   ← overrides win
-              └ the agent's environment,
-                or your current shell with --update-env`}
+{`[apps.api]
+command = "./api"
+directory = "/srv/api"
+instances = 2
+env_file = "/etc/api/.env"
+restart = { policy = "always", max_retries = 5, min_uptime = "10s" }
+health_check = { http = "http://127.0.0.1:8080/health" }
+
+[apps.api.environment]
+PORT = "8080"
+
+[health]
+interval = "30s"`}
             </Code>
+          </section>
+
+          <section id="env" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Environment &amp; env files</h2>
+            <p>
+              Every app&apos;s environment is built in layers. Each layer overrides the one
+              before it, so the values you set explicitly always win:
+            </p>
+            <Code>
+{`1. base         the agent's environment (or your shell, with --update-env),
+                minus anything filter_env drops
+2. env files    env_file / --env-file, in order (later files win)
+3. instance     NODE_APP_INSTANCE and SM2_INSTANCE = 0, 1, … (+ instance_var)
+4. explicit     environment: in config, or -e KEY=VALUE        ← always wins`}
+            </Code>
+            <h3>Env files</h3>
+            <p>
+              Keep secrets in a <code className="tok">.env</code> file wherever suits you, for
+              example <code className="tok">/etc/api/.env</code> outside the repo, and point the app
+              at it. The file doesn&apos;t have to sit next to the app:
+            </p>
+            <Shell
+              lines={[
+                "sm2 start api --env-file /etc/api/.env -- ./api",
+                "# several files: later ones win",
+                "sm2 start api --env-file /etc/common.env --env-file ./api.env -- ./api",
+              ]}
+            />
+            <Code>
+{`apps:
+  api:
+    command: ./api
+    env_file: /etc/api/.env      # or a list
+    environment:
+      PORT: "8080"               # still wins over the file`}
+            </Code>
+            <ul className={styles.list}>
+              <li>
+                <strong>Re-read on every restart.</strong> Edit the file, run{" "}
+                <code className="tok">sm2 restart api</code>, and the change is live. There&apos;s no
+                need to delete and start again.
+              </li>
+              <li>
+                <strong>Standard format:</strong> <code className="tok">KEY=value</code>,{" "}
+                <code className="tok">export KEY=value</code>, <code className="tok"># comments</code>,{" "}
+                <code className="tok">&quot;double&quot;</code> (with <code className="tok">\n</code> escapes) and{" "}
+                <code className="tok">&apos;single&apos;</code> quotes. Values are literal: no{" "}
+                <code className="tok">$VAR</code> expansion.
+              </li>
+              <li>
+                <strong>Fails loudly.</strong> A missing or malformed file is an error at start,
+                not an app that quietly starts without its config.
+              </li>
+              <li>
+                <strong>Secrets stay hidden.</strong> <code className="tok">sm2 describe</code> shows
+                the file path and variable names, never the values.
+              </li>
+            </ul>
+            <h3>Reload</h3>
             <p>
               The base is captured when the background agent first starts. That has a
               practical consequence: if you <code className="tok">export FOO=bar</code> in your
@@ -791,6 +1085,62 @@ health:
               <span className={styles.prompt}>$ </span>export API_KEY=secret{"\n"}
               <span className={styles.prompt}>$ </span>sm2 restart api --update-env{"  "}<span className={styles.cmt}># api now sees API_KEY</span>
             </Code>
+          </section>
+
+          <section id="health" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Health checks</h2>
+            <p>
+              A process can be running and still broken: deadlocked, out of database
+              connections, serving 500s. A health check catches that. sm2 probes the app on an
+              interval, and after a few failures in a row it restarts it. The restart sends the
+              usual notification with the reason, e.g. <em>&quot;health check failed 3 times: HTTP
+              503&quot;</em>.
+            </p>
+            <Shell
+              lines={[
+                "sm2 start api --health http://127.0.0.1:8080/health -- ./api",
+                "sm2 start db-proxy --health tcp://127.0.0.1:6432 -- ./pgbouncer",
+                "sm2 start worker --health './check-queue.sh' --health-interval 1m -- ./worker",
+              ]}
+            />
+            <Code>
+{`apps:
+  api:
+    command: ./api
+    health_check:
+      http: http://127.0.0.1:8080/health   # or  tcp: 127.0.0.1:8080   or  command: ./check.sh
+      interval: 15s                        # optional; defaults from health:
+      timeout: 3s
+      retries: 3
+
+health:          # defaults for every app
+  interval: 30s
+  timeout: 5s
+  retries: 3`}
+            </Code>
+            <Table
+              head={["Probe", "Healthy when"]}
+              rows={[
+                ["http: <url>", "The URL answers with a status below 400 within the timeout."],
+                ["tcp: <host:port>", "The port accepts a connection within the timeout."],
+                ["command: <shell>", "The command exits 0. It runs in the app's directory, with the app's environment."],
+              ]}
+            />
+            <ul className={styles.list}>
+              <li>
+                <strong>Grace after start.</strong> The first check comes one interval after each
+                (re)start, so a slow-booting app isn&apos;t killed while it warms up.
+              </li>
+              <li>
+                <strong>Failures must be consecutive.</strong> One slow response doesn&apos;t restart
+                anything; <code className="tok">retries</code> failures in a row do.
+              </li>
+              <li>
+                <code className="tok">sm2 describe &lt;app&gt;</code> shows the check and the latest
+                result (healthy, or unhealthy with the error). Set{" "}
+                <code className="tok">health.enabled: false</code> to pause every check at once.
+              </li>
+            </ul>
           </section>
 
           <section id="triggers" className={styles.section}>
@@ -838,6 +1188,38 @@ health:
               <span className={styles.prompt}>$ </span>sm2 startup{"    "}<span className={styles.cmt}># prints the enable command</span>{"\n"}
               <span className={styles.prompt}>$ </span>sm2 resurrect{"  "}<span className={styles.cmt}># restore on demand</span>
             </Code>
+          </section>
+
+          <section id="files" className={styles.section}>
+            <h2><span className={styles.hash}>#</span>Files &amp; variables</h2>
+            <p>
+              Everything sm2 keeps lives in one folder, <code className="tok">~/.sm2</code>. Set{" "}
+              <code className="tok">SM2_HOME</code> to put it somewhere else, for example a
+              separate home per project, or a scratch folder in CI.
+            </p>
+            <Table
+              head={["Path", "What it is"]}
+              rows={[
+                ["sm2.sock", "The socket the CLI uses to talk to the agent."],
+                ["agent.pid", "The running agent's PID."],
+                ["state.json", "The live app list, auto-saved on every change, so the agent brings apps back if it restarts."],
+                ["dump.json", "Written by sm2 save, read by sm2 resurrect and the boot service."],
+                ["notify.json", "Notification settings from sm2 notify (mode 0600: it holds the webhook)."],
+                ["logrotate.json · disk.json", "Settings from sm2 set logs.* and disk.*."],
+                ["logs/<name>.stdout.log · .stderr.log", "Each app's output."],
+                ["logs/agent.log", "The agent's own log. Look here if something about sm2 itself misbehaves."],
+                ["sm2.yaml · sm2.toml", "Optional. Used when no config is found in the current folder."],
+              ]}
+            />
+            <Table
+              head={["Variable", "Effect"]}
+              rows={[
+                ["SM2_HOME", "Where sm2 keeps its files. Default: ~/.sm2."],
+                ["NO_COLOR=1", "No colors in output."],
+                ["SM2_FORCE_COLOR=1", "Colors and boxes even when piped (e.g. into less -R)."],
+                ["NODE_APP_INSTANCE · SM2_INSTANCE", "Set for every app: its instance index (0 for single apps)."],
+              ]}
+            />
           </section>
 
           <section id="notifications" className={styles.section}>

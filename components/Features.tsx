@@ -17,9 +17,9 @@ const FEATURES = [
     body: "State, CPU, memory, uptime, and restarts for every app. Then sm2 sys shows the whole server, and you don't name anything: databases, web servers, containers, and stray processes, each with its version and ports.",
   },
   {
-    tag: "sm2 config reload",
+    tag: "sm2 config reload · sm2 import",
     title: "Describes the whole stack",
-    body: "Declare every app in sm2.yaml. Reload reconciles the running set to match — starting what's new, stopping what's gone, restarting what changed.",
+    body: "Declare every app in sm2.yaml. Reload starts what's new, stops what's gone, and restarts what changed. Coming from pm2? sm2 import turns your ecosystem.config.js into an sm2.yaml.",
   },
   {
     tag: "notifications",
